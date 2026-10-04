@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roulette</title>
+<style>
+  :root { color-scheme: dark; --blue:#4169E1; --orange:#FF8C00; --cw:800px; --ch:420px; --ww:820px; --wh:1000px; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:#0b0d12; font-family: system-ui, Segoe UI, Arial, sans-serif; color:#fff; overflow:hidden; }
+  body { display:flex; }
+
+  /* ---------- zone de la roue (1080x1920, mise à l'échelle pour tenir à l'écran) ---------- */
+  #area { flex:1; position:relative; min-width:0; overflow:hidden; }
+  #stage { position:absolute; left:50%; top:50%; width:1080px; height:1920px; transform-origin:center center;
+           background:var(--blue); overflow:hidden; }
+  #cards { position:absolute; inset:0; }
+  .card { position:absolute; left:50%; top:50%; width:var(--cw); height:var(--ch);
+          transform:translate(-50%,-50%); border-radius:24px; overflow:hidden;
+          background:rgba(10,20,70,.55); box-shadow:0 10px 30px rgba(0,0,0,.35);
+          display:flex; flex-direction:column; will-change:transform; }
+  .pic { flex:1; min-height:0; padding:34px 70px; display:flex; align-items:center; justify-content:center; }
+  .pic img { width:100%; height:100%; object-fit:contain; display:block; }
+  .pic img { image-rendering:auto; }
+
+  /* ---------- fond animé ---------- */
+  #bg { position:absolute; inset:0; overflow:hidden;
+        background:
+          radial-gradient(ellipse at 50% 45%, rgba(150,185,255,.55) 0%, rgba(65,105,225,0) 62%),
+          radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 55%, rgba(10,25,110,.6) 100%); }
+  #rays { position:absolute; left:50%; top:50%; width:3400px; height:3400px; margin:-1700px 0 0 -1700px;
+          background:repeating-conic-gradient(rgba(255,255,255,.10) 0deg 8deg, rgba(255,255,255,0) 8deg 16deg);
+          -webkit-mask-image:radial-gradient(circle, #000 0%, transparent 62%);
+          mask-image:radial-gradient(circle, #000 0%, transparent 62%);
+          animation:raysSpin 120s linear infinite; }
+  @keyframes raysSpin { to { transform:rotate(360deg); } }
+  .bubble { position:absolute; bottom:-220px; border-radius:50%; border:3px solid rgba(255,255,255,.35);
+            background:rgba(255,255,255,.08); animation:rise linear infinite; }
+  @keyframes rise { 0% { transform:translateY(0); opacity:0; } 10% { opacity:1; } 90% { opacity:1; } 100% { transform:translateY(-2400px); opacity:0; } }
+  /* le nom reste caché pendant la rotation, il n'apparaît qu'au résultat final */
+  .label { height:0; opacity:0; line-height:150px; text-align:center; font-weight:800; font-size:80px; color:var(--orange);
+           text-transform:uppercase; white-space:nowrap; overflow:hidden; overflow-wrap:anywhere; padding:0 24px;
+           display:flex; align-items:center; justify-content:center;
+           text-shadow:-3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000,
+                       0 -3px 0 #000, 0 3px 0 #000, -3px 0 0 #000, 3px 0 0 #000; }
+
+  /* cadre de sélection */
+  #frame { position:absolute; left:50%; top:50%; width:calc(var(--cw) + 44px); height:calc(var(--ch) + 44px);
+           transform:translate(-50%,-50%); border:6px solid var(--orange); border-radius:32px; pointer-events:none;
+           transition:width .9s ease, height .9s ease; }
+  #frame::before, #frame::after { content:""; position:absolute; top:50%; margin-top:-18px; border-style:solid; transition:opacity .4s; }
+  #frame::before { left:-34px; border-width:18px 0 18px 22px; border-color:transparent transparent transparent var(--orange); }
+  #frame::after  { right:-34px; border-width:18px 22px 18px 0; border-color:transparent var(--orange) transparent transparent; }
+
+
+  /* ---------- état final : le gagnant grandit, les autres s'effacent ---------- */
+  #stage.done .card { transition:opacity .7s ease, width .9s ease, height .9s ease; }
+  #stage.done .card:not(.win) { opacity:0 !important; }
+  #stage.done .card.win { width:var(--ww); height:var(--wh); background:rgba(10,20,70,.35); z-index:5; }
+  #stage.done .card.win .pic { padding:60px 50px 0; }
+  #stage.done .card.win .label { height:150px; opacity:1; transition:height .9s ease, opacity .9s ease .3s; }
+  #stage.done #frame { width:calc(var(--ww) + 44px); height:calc(var(--wh) + 44px); }
+  #stage.done #frame::before, #stage.done #frame::after { opacity:0; }
+
+  /* ---------- panneau de commandes à droite ---------- */
+  #panel { width:230px; flex:none; background:#12151d; border-left:1px solid #2a3042; padding:16px 14px;
+           display:flex; flex-direction:column; gap:14px; }
+  #panel.hidden { display:none; }
+  button, label.btn { background:#1e2432; color:#fff; border:1px solid #3a4258; border-radius:8px; padding:10px 12px;
+                      font-size:14px; cursor:pointer; text-align:center; }
+  button:hover, label.btn:hover { background:#2a3248; }
+  #spin { background:var(--orange); color:#111; font-weight:700; border-color:var(--orange); font-size:17px; padding:14px 12px; }
+  #spin:disabled { opacity:.5; cursor:default; }
+  #info { font-size:13px; opacity:.85; line-height:1.4; }
+  .opt { font-size:14px; display:flex; gap:8px; align-items:center; }
+  .hint { font-size:12px; opacity:.5; margin-top:auto; }
+  input[type=file] { display:none; }
+</style>
+</head>
+<body>
+
+<div id="area">
+  <div id="stage">
+    <div id="bg"><div id="rays"></div></div>
+    <div id="cards"></div>
+    <div id="frame"></div>
+  </div>
+</div>
+
+<div id="panel">
+  <button id="spin" disabled>TIRER<br><small>(espace)</small></button>
+  <label class="opt"><input type="checkbox" id="remove"> Retirer l'image après tirage</label>
+  <div id="info">Chargement de la liste…</div>
+  <label class="btn" id="pickLabel" style="display:none">📁 Choisir le dossier à la main<input id="folder" type="file" webkitdirectory multiple></label>
+  <div class="hint">Touche H : masquer / afficher ce panneau</div>
+</div>
+
+<!-- liste.js est généré par creer_liste.bat (liste des fichiers du dossier allpokemon) -->
+<script src="liste.js"></script>
+<script>
+// ====== RÉGLAGES ======
+const W = 1080, H = 1920;
+const FOLDER = "allpokemon";   // dossier d'images, à côté de roulette.html
+const LOAD_COUNT = 40;         // images chargées au hasard à chaque lancement
+const CARD_W = 800, CARD_H = 420, GAP = 30;
+const SPIN_MS = 7500;
+// =======================
+
+const PITCH = CARD_H + GAP;
+const $ = id => document.getElementById(id);
+const stage = $('stage'), cardsEl = $('cards'), spinBtn = $('spin'), info = $('info');
+const IMG_RE = /\.(gif|png|jpe?g|webp|avif|bmp)$/i;
+const cleanName = n => n.replace(/\.[^.]+$/, '');
+
+let all = [];        // {name, src} ou {name, file}
+let strip = [];      // {name, src, entry, nw, nh, el}
+let offset = 0, state = 'idle', winnerIdx = -1, startT = 0, targetOffset = 0, lastTick = -1;
+let objectUrls = [];
+
+// ---- mise à l'échelle de la scène 1080x1920 ----
+function fit() {
+  const a = $('area');
+  const s = Math.min(a.clientWidth / W, a.clientHeight / H);
+  stage.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+}
+addEventListener('resize', fit);
+
+// ---- liste des images ----
+function initFromManifest() {
+  const list = window.POKEMON_LIST;
+  if (Array.isArray(list) && list.length) {
+    all = list.filter(n => IMG_RE.test(n)).map(n => ({ name: cleanName(n), src: FOLDER + '/' + encodeURIComponent(n) }));
+    ready();
+  } else {
+    info.textContent = "Liste introuvable : lance creer_liste.bat à côté du dossier, ou choisis le dossier à la main.";
+    $('pickLabel').style.display = '';
+  }
+}
+$('folder').onchange = e => {
+  all = [...e.target.files].filter(f => IMG_RE.test(f.name)).map(f => ({ name: cleanName(f.name), file: f }));
+  if (all.length) ready(); else info.textContent = "Aucune image trouvée dans ce dossier";
+};
+function ready() {
+  info.textContent = all.length + " images disponibles — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement";
+  spinBtn.disabled = false;
+  showIdle();
+}
+
+// ---- chargement aléatoire ----
+function sample(arr, n) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a.slice(0, n);
+}
+function loadEntry(entry) {
+  return new Promise(res => {
+    let src = entry.src;
+    if (entry.file) { src = URL.createObjectURL(entry.file); objectUrls.push(src); }
+    const img = new Image();
+    img.onload = () => res({ name: entry.name, src, entry, nw: img.naturalWidth, nh: img.naturalHeight });
+    img.onerror = () => res(null);
+    img.src = src;
+  });
+}
+async function loadRandom(n) {
+  return (await Promise.all(sample(all, n).map(loadEntry))).filter(Boolean);
+}
+function rnd(n) { return Math.floor(Math.random() * n); }
+function buildStrip(loaded, len) {
+  const out = []; let prev = null;
+  for (let i = 0; i < len; i++) {
+    let p; do { p = loaded[rnd(loaded.length)]; } while (loaded.length > 1 && p === prev);
+    out.push(Object.assign({}, p)); prev = p;
+  }
+  return out;
+}
+function renderStrip() {
+  cardsEl.innerHTML = '';
+  strip.forEach(it => {
+    const card = document.createElement('div'); card.className = 'card';
+    const pic = document.createElement('div'); pic.className = 'pic';
+    const img = document.createElement('img'); img.src = it.src; img.alt = '';
+    pic.appendChild(img);
+    const lab = document.createElement('div'); lab.className = 'label'; lab.textContent = it.name;
+    card.appendChild(pic); card.appendChild(lab);
+    cardsEl.appendChild(card); it.el = card;
+  });
+}
+function render() {
+  for (let i = 0; i < strip.length; i++) {
+    const el = strip[i].el, d = i * PITCH - offset;
+    if (Math.abs(d) > H / 2 + CARD_H) { el.style.display = 'none'; continue; }
+    el.style.display = '';
+    const dist = Math.min(Math.abs(d) / (H / 2), 1);
+    el.style.transform = 'translate(-50%,-50%) translateY(' + d + 'px) scale(' + (1 - dist * 0.22) + ')';
+    el.style.opacity = 1 - dist * 0.55;
+  }
+}
+
+async function showIdle() {
+  state = 'loading';
+  const loaded = await loadRandom(Math.min(10, all.length));
+  if (!loaded.length) { info.textContent = "Impossible de charger les images (vérifie le dossier « " + FOLDER + " »)"; state = 'idle'; return; }
+  stage.classList.remove('done');
+  strip = buildStrip(loaded, 10); renderStrip(); offset = 4 * PITCH; winnerIdx = -1; render();
+  state = 'idle';
+}
+
+// ---- tirage ----
+async function spin() {
+  if (state === 'spinning' || state === 'loading' || !all.length) return;
+  initAudio();
+  state = 'loading'; spinBtn.disabled = true;
+  const old = objectUrls; objectUrls = [];
+  const loaded = await loadRandom(Math.min(LOAD_COUNT, all.length));
+  if (!loaded.length) { state = 'idle'; spinBtn.disabled = false; info.textContent = "Erreur de chargement des images"; return; }
+  stage.classList.remove('done');
+  const K = 48 + rnd(10);
+  strip = buildStrip(loaded, K + 6); renderStrip();
+  old.forEach(u => URL.revokeObjectURL(u));
+  winnerIdx = K; offset = 0; render();
+  targetOffset = K * PITCH + (Math.random() - 0.5) * CARD_H * 0.5;
+  startT = performance.now(); lastTick = -1;
+  state = 'spinning';
+  requestAnimationFrame(loop);
+}
+function loop(now) {
+  const t = Math.min((now - startT) / SPIN_MS, 1);
+  offset = targetOffset * (1 - Math.pow(1 - t, 4));
+  const idx = Math.floor((offset + PITCH / 2) / PITCH);
+  if (idx !== lastTick) { lastTick = idx; tick(); }
+  render();
+  if (t < 1) requestAnimationFrame(loop); else finish();
+}
+function finish() {
+  const from = offset, to = winnerIdx * PITCH, s = performance.now();
+  (function snap(n) {
+    const k = Math.min((n - s) / 400, 1);
+    offset = from + (to - from) * (1 - Math.pow(1 - k, 3));
+    render();
+    if (k < 1) { requestAnimationFrame(snap); return; }
+    // le gagnant devient grand, les autres s'effacent
+    const win = strip[winnerIdx];
+    fitLabel(win.el.querySelector('.label'));
+    win.el.classList.add('win');
+    win.el.style.transform = 'translate(-50%,-50%) translateY(0px) scale(1)';
+    win.el.style.opacity = 1;
+    stage.classList.add('done');
+    state = 'done'; fanfare();
+    if ($('remove').checked) {
+      all = all.filter(e => e !== win.entry);
+      info.textContent = all.length + " images restantes";
+    }
+    spinBtn.disabled = all.length === 0;
+  })(s);
+}
+
+// ajuste la taille du nom pour qu'il tienne en entier (réduit la police, puis passe sur 2 lignes si besoin)
+function fitLabel(el) {
+  const text = el.textContent.toUpperCase();
+  const avail = 820 - 48 - 10;                       // largeur de la carte finale moins marges et contour
+  const c = document.createElement('canvas').getContext('2d');
+  const fam = getComputedStyle(el).fontFamily;
+  const w = s => { c.font = '800 ' + s + 'px ' + fam; return c.measureText(text).width; };
+  let s = 80;
+  while (s > 40 && w(s) > avail) s -= 2;
+  if (w(s) <= avail) {                               // tient sur une ligne
+    el.style.fontSize = s + 'px'; el.style.lineHeight = '150px'; el.style.whiteSpace = 'nowrap'; return;
+  }
+  s = 64;                                            // sinon : deux lignes
+  while (s > 28 && w(s) > avail * 1.8) s -= 2;
+  el.style.fontSize = s + 'px'; el.style.lineHeight = '1.1'; el.style.whiteSpace = 'normal';
+}
+
+// ---- sons ----
+let ac;
+function initAudio() { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) {} }
+function tick() {
+  if (!ac) return;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'square'; o.frequency.value = 900; g.gain.setValueAtTime(.05, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + .05);
+  o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + .06);
+}
+function fanfare() {
+  if (!ac) return;
+  [523, 659, 784, 1047].forEach((f, i) => {
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + i * .11;
+    o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.12, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .35);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + .4);
+  });
+}
+
+spinBtn.onclick = spin;
+addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); if (!spinBtn.disabled) spin(); }
+  if (e.key.toLowerCase() === 'h') { $('panel').classList.toggle('hidden'); fit(); }
+});
+// bulles qui montent doucement dans le fond
+(function bubbles() {
+  const bg = $('bg');
+  for (let i = 0; i < 22; i++) {
+    const b = document.createElement('div'); b.className = 'bubble';
+    const s = 30 + Math.random() * 130;
+    b.style.cssText = 'width:' + s + 'px;height:' + s + 'px;left:' + (Math.random() * 100) + '%;' +
+      'animation-duration:' + (14 + Math.random() * 18) + 's;animation-delay:-' + (Math.random() * 30) + 's;';
+    bg.appendChild(b);
+  }
+})();
+fit();
+initFromManifest();
+</script>
+</body>
+</html>
