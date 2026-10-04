@@ -74,6 +74,23 @@
   #info { font-size:13px; opacity:.85; line-height:1.4; }
   .opt { font-size:14px; display:flex; gap:8px; align-items:center; }
   .hint { font-size:12px; opacity:.5; margin-top:auto; }
+
+  /* ---------- fenêtre de gestion de la mémoire ---------- */
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.65); display:flex; align-items:center; justify-content:center; z-index:50; }
+  .modal.hidden { display:none; }
+  .box { width:min(540px, 94vw); height:min(82vh, 720px); background:#12151d; border:1px solid #2a3042; border-radius:12px;
+         padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .mhead { display:flex; justify-content:space-between; align-items:center; font-size:17px; }
+  .tabs { display:flex; gap:8px; }
+  .tabs button { flex:1; }
+  .tabs button.on { background:var(--orange); color:#111; border-color:var(--orange); font-weight:700; }
+  #memSearch { background:#1e2432; color:#fff; border:1px solid #3a4258; border-radius:8px; padding:10px 12px; font-size:15px; }
+  #memList { flex:1; overflow:auto; border:1px solid #2a3042; border-radius:8px; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 10px; border-bottom:1px solid #1f2535; font-size:14px; }
+  .row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row button { padding:5px 10px; font-size:13px; flex:none; }
+  .empty { padding:20px; text-align:center; opacity:.6; font-size:14px; }
+  .mfoot { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12px; opacity:.9; }
   input[type=file] { display:none; }
 </style>
 </head>
@@ -92,7 +109,19 @@
   <label class="opt"><input type="checkbox" id="remove"> Retirer l'image après tirage</label>
   <div id="info">Chargement de la liste…</div>
   <label class="btn" id="pickLabel" style="display:none">📁 Choisir le dossier à la main<input id="folder" type="file" webkitdirectory multiple></label>
+  <button id="manageMem">🗂 Gérer la mémoire</button>
+  <button id="resetMem">↺ Réinitialiser la mémoire</button>
   <div class="hint">Touche H : masquer / afficher ce panneau</div>
+</div>
+
+<div id="mem" class="modal hidden">
+  <div class="box">
+    <div class="mhead"><strong>Mémoire des images</strong><button id="memClose">✕</button></div>
+    <div class="tabs"><button id="tabRem" class="on">Retirées (0)</button><button id="tabAv">Disponibles (0)</button></div>
+    <input id="memSearch" type="text" placeholder="Rechercher un nom…" autocomplete="off">
+    <div id="memList"></div>
+    <div class="mfoot"><button id="memAll">Tout remettre</button><span id="memNote"></span></div>
+  </div>
 </div>
 
 <!-- liste.js est généré par creer_liste.bat (liste des fichiers du dossier allpokemon) -->
@@ -117,6 +146,19 @@ let strip = [];      // {name, src, entry, nw, nh, el}
 let offset = 0, state = 'idle', winnerIdx = -1, startT = 0, targetOffset = 0, lastTick = -1;
 let objectUrls = [];
 
+// ---- mémoire des images retirées (conservée entre les rechargements) ----
+const MEM_KEY = 'roulette_images_retirees';
+function loadRemoved() {
+  try { return new Set(JSON.parse(localStorage.getItem(MEM_KEY) || '[]')); } catch (e) { return new Set(); }
+}
+function saveRemoved() {
+  try { localStorage.setItem(MEM_KEY, JSON.stringify([...removed])); } catch (e) {}
+  updateMemBtn();
+}
+const removed = loadRemoved();
+let fullList = [];   // toutes les images du dossier, y compris celles retirées
+function updateMemBtn() { $('resetMem').textContent = '↺ Réinitialiser la mémoire (' + removed.size + ' retirées)'; }
+
 // ---- mise à l'échelle de la scène 1080x1920 ----
 function fit() {
   const a = $('area');
@@ -129,7 +171,7 @@ addEventListener('resize', fit);
 function initFromManifest() {
   const list = window.POKEMON_LIST;
   if (Array.isArray(list) && list.length) {
-    all = list.filter(n => IMG_RE.test(n)).map(n => ({ name: cleanName(n), src: FOLDER + '/' + encodeURIComponent(n) }));
+    all = list.filter(n => IMG_RE.test(n)).map(n => ({ id: n, name: cleanName(n), src: FOLDER + '/' + encodeURIComponent(n) }));
     ready();
   } else {
     info.textContent = "Liste introuvable : lance creer_liste.bat à côté du dossier, ou choisis le dossier à la main.";
@@ -137,11 +179,22 @@ function initFromManifest() {
   }
 }
 $('folder').onchange = e => {
-  all = [...e.target.files].filter(f => IMG_RE.test(f.name)).map(f => ({ name: cleanName(f.name), file: f }));
+  all = [...e.target.files].filter(f => IMG_RE.test(f.name)).map(f => ({ id: f.name, name: cleanName(f.name), file: f }));
   if (all.length) ready(); else info.textContent = "Aucune image trouvée dans ce dossier";
 };
 function ready() {
-  info.textContent = all.length + " images disponibles — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement";
+  fullList = all.slice();
+  const before = all.length;
+  all = all.filter(e => !removed.has(e.id));      // exclut les images déjà retirées lors des sessions précédentes
+  const hidden = before - all.length;
+  updateMemBtn();
+  if (!all.length) {
+    spinBtn.disabled = true;
+    info.textContent = "Plus aucune image disponible (" + hidden + " retirées) — utilise « Réinitialiser la mémoire ».";
+    return;
+  }
+  info.textContent = all.length + " images disponibles" + (hidden ? " (" + hidden + " déjà retirées)" : "") +
+    " — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement";
   spinBtn.disabled = false;
   showIdle();
 }
@@ -249,6 +302,7 @@ function finish() {
     state = 'done'; fanfare();
     if ($('remove').checked) {
       all = all.filter(e => e !== win.entry);
+      removed.add(win.entry.id); saveRemoved();
       info.textContent = all.length + " images restantes";
     }
     spinBtn.disabled = all.length === 0;
@@ -292,8 +346,75 @@ function fanfare() {
   });
 }
 
+// ---- gestionnaire de mémoire : retirer / remettre des images à la main ----
+let memTab = 'rem';
+const MEM_MAX = 300;
+function refreshAfterMem() {
+  all = fullList.filter(e => !removed.has(e.id));
+  const hidden = fullList.length - all.length;
+  info.textContent = all.length + " images disponibles" + (hidden ? " (" + hidden + " retirées)" : "") +
+    " — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement";
+  spinBtn.disabled = all.length === 0 || state === 'spinning' || state === 'loading';
+  if (all.length && !strip.length && state === 'idle') showIdle();
+}
+function toggleMem(id) {
+  if (removed.has(id)) removed.delete(id); else removed.add(id);
+  saveRemoved(); refreshAfterMem(); renderMem(true);
+}
+function renderMem(keepScroll) {
+  const list = $('memList'), top = list.scrollTop;
+  const q = $('memSearch').value.trim().toLowerCase();
+  const byName = (a, b) => a.localeCompare(b);
+  const remList = [...removed].sort(byName);
+  const avList = fullList.filter(e => !removed.has(e.id)).map(e => e.id).sort(byName);
+  $('tabRem').textContent = 'Retirées (' + remList.length + ')';
+  $('tabAv').textContent = 'Disponibles (' + avList.length + ')';
+  $('tabRem').classList.toggle('on', memTab === 'rem');
+  $('tabAv').classList.toggle('on', memTab === 'av');
+  const filtered = (memTab === 'rem' ? remList : avList).filter(id => cleanName(id).toLowerCase().includes(q));
+  list.innerHTML = '';
+  if (!filtered.length) {
+    const d = document.createElement('div'); d.className = 'empty';
+    d.textContent = (memTab === 'av' && !fullList.length) ? "Aucune liste chargée" : "Aucune image";
+    list.appendChild(d);
+  }
+  filtered.slice(0, MEM_MAX).forEach(id => {
+    const row = document.createElement('div'); row.className = 'row';
+    const s = document.createElement('span'); s.textContent = cleanName(id); s.title = id;
+    const b = document.createElement('button'); b.textContent = memTab === 'rem' ? 'Remettre' : 'Retirer';
+    b.onclick = () => toggleMem(id);
+    row.appendChild(s); row.appendChild(b); list.appendChild(row);
+  });
+  $('memNote').textContent = filtered.length > MEM_MAX
+    ? "300 premiers sur " + filtered.length + " — affine la recherche"
+    : filtered.length + " résultat(s)";
+  list.scrollTop = keepScroll ? top : 0;
+}
+function openMem() { $('mem').classList.remove('hidden'); renderMem(); $('memSearch').focus(); }
+function closeMem() { $('mem').classList.add('hidden'); }
+$('manageMem').onclick = openMem;
+$('memClose').onclick = closeMem;
+$('mem').addEventListener('mousedown', e => { if (e.target === $('mem')) closeMem(); });
+$('tabRem').onclick = () => { memTab = 'rem'; renderMem(); };
+$('tabAv').onclick = () => { memTab = 'av'; renderMem(); };
+$('memSearch').oninput = () => renderMem();
+$('memAll').onclick = () => {
+  if (!removed.size) return;
+  if (confirm("Remettre dans la roue les " + removed.size + " images retirées ?")) {
+    removed.clear(); saveRemoved(); refreshAfterMem(); renderMem();
+  }
+};
+
+$('resetMem').onclick = () => {
+  if (!removed.size) return;
+  if (confirm("Remettre dans la roue les " + removed.size + " images retirées ?")) {
+    removed.clear(); saveRemoved(); location.reload();
+  }
+};
+updateMemBtn();
 spinBtn.onclick = spin;
 addEventListener('keydown', e => {
+  if (!$('mem').classList.contains('hidden')) { if (e.key === 'Escape') closeMem(); return; }  // fenêtre mémoire ouverte
   if (e.code === 'Space') { e.preventDefault(); if (!spinBtn.disabled) spin(); }
   if (e.key.toLowerCase() === 'h') { $('panel').classList.toggle('hidden'); fit(); }
 });
