@@ -145,6 +145,9 @@
   html.lite .bubble { border:none; background:rgba(255,255,255,.10); }
   html.lite .card { box-shadow:none; }
   html.lite #bg { background:radial-gradient(ellipse at 50% 45%, rgba(150,185,255,.4) 0%, rgba(65,105,225,0) 62%); }
+  /* bulles personnalisées (bulle.png) */
+  html .bubble.custom { border:none; border-radius:0; background-color:transparent; background-size:contain;
+                        background-repeat:no-repeat; background-position:center; }
 </style>
 </head>
 <body>
@@ -504,15 +507,24 @@ addEventListener('keydown', e => {
   if (e.key.toLowerCase() === 'h') { $('panel').classList.toggle('hidden'); fit(); }
 });
 // bulles qui montent doucement dans le fond
+// Si un fichier "bulle.png" (ton propre visuel, fond transparent) est placé à côté de index.html,
+// il remplace les bulles rondes. Sinon : bulles rondes habituelles.
 (function bubbles() {
   const bg = $('bg');
-  for (let i = 0; i < (LITE ? 8 : 22); i++) {
-    const b = document.createElement('div'); b.className = 'bubble';
-    const s = 30 + Math.random() * 130;
-    b.style.cssText = 'width:' + s + 'px;height:' + s + 'px;left:' + (Math.random() * 100) + '%;' +
-      'animation-duration:' + (14 + Math.random() * 18) + 's;animation-delay:-' + (Math.random() * 30) + 's;';
-    bg.appendChild(b);
+  function make(imgUrl) {
+    for (let i = 0; i < (LITE ? 8 : 22); i++) {
+      const b = document.createElement('div'); b.className = 'bubble' + (imgUrl ? ' custom' : '');
+      const s = 30 + Math.random() * 130;
+      b.style.cssText = 'width:' + s + 'px;height:' + s + 'px;left:' + (Math.random() * 100) + '%;' +
+        'animation-duration:' + (14 + Math.random() * 18) + 's;animation-delay:-' + (Math.random() * 30) + 's;';
+      if (imgUrl) b.style.backgroundImage = 'url("' + imgUrl + '")';
+      bg.appendChild(b);
+    }
   }
+  const t = new Image();
+  t.onload = () => make('bulle.png');
+  t.onerror = () => make(null);
+  t.src = 'bulle.png';
 })();
 fit();
 initFromManifest();
