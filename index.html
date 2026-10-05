@@ -226,7 +226,7 @@
   </div>
   <div id="opts">
   <div class="grab"></div>
-  <label class="opt"><input type="checkbox" id="remove"> Retirer l'image après tirage</label>
+  <label class="opt"><input type="checkbox" id="remove"> Retirer le pokémon après tirage</label>
   <div id="info">Chargement de la liste…</div>
   <label class="btn" id="pickLabel" style="display:none">📁 Choisir le dossier à la main<input id="folder" type="file" webkitdirectory multiple></label>
   <div class="themeRow"><label for="themeSel">🎨 Thème</label>
@@ -255,7 +255,7 @@
 
 <div id="mem" class="modal hidden">
   <div class="box">
-    <div class="mhead"><strong>Mémoire des images</strong><button id="memClose">✕</button></div>
+    <div class="mhead"><strong>Mémoire des pokémons</strong><button id="memClose">✕</button></div>
     <div class="tabs"><button id="tabRem" class="on">Retirées (0)</button><button id="tabAv">Disponibles (0)</button><button id="tabTri">Hors tri (0)</button></div>
     <input id="memSearch" type="text" placeholder="Rechercher un nom…" autocomplete="off">
     <div id="memList"></div>
@@ -273,7 +273,7 @@
 
 <div id="tri" class="modal hidden">
   <div class="box">
-    <div class="mhead"><strong>Tri des images</strong><button id="triClose">✕</button></div>
+    <div class="mhead"><strong>Tri des pokémons</strong><button id="triClose">✕</button></div>
     <div class="tabs"><button id="tabNone">Aucun tri</button><button id="tabGen">Par génération</button><button id="tabGame">Par jeu</button></div>
     <div id="triBody"></div>
     <div class="mfoot"><span style="display:flex;gap:8px"><button id="triAll">Tout cocher</button><button id="triClear">Tout décocher</button></span><span id="triNote"></span></div>
@@ -338,7 +338,7 @@ function initFromManifest() {
 }
 $('folder').onchange = e => {
   all = [...e.target.files].filter(f => IMG_RE.test(f.name)).map(f => ({ id: f.name, name: cleanName(f.name), file: f }));
-  if (all.length) ready(); else info.textContent = "Aucune image trouvée dans ce dossier";
+  if (all.length) ready(); else info.textContent = "Aucun pokémon trouvé dans ce dossier";
 };
 function ready() {
   fullList = all.slice();
@@ -348,10 +348,10 @@ function ready() {
   updateMemBtn();
   if (!all.length) {
     spinBtn.disabled = true;
-    info.textContent = "Plus aucune image disponible (" + hidden + " retirées) — utilise « Réinitialiser la mémoire ».";
+    info.textContent = "Plus aucun pokémon disponible (" + hidden + " retirées) — utilise « Réinitialiser la mémoire ».";
     return;
   }
-  info.textContent = all.length + " images disponibles" + (hidden ? " (" + hidden + " déjà retirées)" : "") +
+  info.textContent = all.length + " pokémons disponibles" + (hidden ? " (" + hidden + " déjà retirés)" : "") +
     " — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement" + triLabel();
   spinBtn.disabled = false;
   showIdle();
@@ -423,7 +423,7 @@ function render() {
 async function showIdle() {
   state = 'loading';
   const loaded = await loadRandom(Math.min(10, all.length));
-  if (!loaded.length) { info.textContent = "Impossible de charger les images (vérifie le dossier « " + FOLDER + " »)"; state = 'idle'; return; }
+  if (!loaded.length) { info.textContent = "Impossible de charger les pokémons (vérifie le dossier « " + FOLDER + " »)"; state = 'idle'; return; }
   stage.classList.remove('done');
   strip = buildStrip(loaded, 10); renderStrip(); offset = 4 * PITCH; winnerIdx = -1; render();
   state = 'idle';
@@ -436,7 +436,7 @@ async function spin() {
   state = 'loading'; spinBtn.disabled = true;
   const old = objectUrls; objectUrls = [];
   const loaded = await loadRandom(Math.min(LOAD_COUNT, all.length));
-  if (!loaded.length) { state = 'idle'; spinBtn.disabled = false; info.textContent = "Erreur de chargement des images"; return; }
+  if (!loaded.length) { state = 'idle'; spinBtn.disabled = false; info.textContent = "Erreur de chargement des pokémons"; return; }
   stage.classList.remove('done'); stopFx();
   const K = 48 + rnd(10);
   strip = buildStrip(loaded, K + 6); renderStrip();
@@ -475,7 +475,7 @@ function finish() {
     if ($('remove').checked) {
       all = all.filter(e => e !== win.entry);
       removed.add(win.entry.id); saveRemoved();
-      info.textContent = all.length + " images restantes";
+      info.textContent = all.length + " pokémons restants";
     }
     spinBtn.disabled = all.length === 0;
   })(s);
@@ -534,7 +534,7 @@ const MEM_MAX = 300;
 function refreshAfterMem() {
   all = fullList.filter(visible);
   const hidden = fullList.length - all.length;
-  info.textContent = all.length + " images disponibles" + (hidden ? " (" + hidden + " retirées)" : "") +
+  info.textContent = all.length + " pokémons disponibles" + (hidden ? " (" + hidden + " retirés)" : "") +
     " — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement" + triLabel();
   spinBtn.disabled = all.length === 0 || state === 'spinning' || state === 'loading';
   if (all.length && !strip.length && state === 'idle') showIdle();
@@ -560,7 +560,7 @@ function renderMem(keepScroll) {
   list.innerHTML = '';
   if (!filtered.length) {
     const d = document.createElement('div'); d.className = 'empty';
-    d.textContent = (memTab === 'av' && !fullList.length) ? "Aucune liste chargée" : "Aucune image";
+    d.textContent = (memTab === 'av' && !fullList.length) ? "Aucune liste chargée" : "Aucun pokémon";
     list.appendChild(d);
   }
   filtered.slice(0, MEM_MAX).forEach(id => {
@@ -589,14 +589,14 @@ $('tabTri').onclick = () => { memTab = 'tri'; renderMem(); };
 $('memSearch').oninput = () => renderMem();
 $('memAll').onclick = () => {
   if (!removed.size) return;
-  if (confirm("Remettre dans la roue les " + removed.size + " images retirées ?")) {
+  if (confirm("Remettre dans la roue les " + removed.size + " pokémons retirés ?")) {
     removed.clear(); saveRemoved(); refreshAfterMem(); renderMem();
   }
 };
 
 $('resetMem').onclick = () => {
   if (!removed.size) return;
-  if (confirm("Remettre dans la roue les " + removed.size + " images retirées ?")) {
+  if (confirm("Remettre dans la roue les " + removed.size + " pokémons retirés ?")) {
     removed.clear(); saveRemoved(); location.reload();
   }
 };
@@ -768,7 +768,7 @@ function chk(label, checked, count, onChange, sub) {
   const row = document.createElement('label'); row.className = 'chk' + (sub ? ' sub' : '');
   const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = checked; cb.onchange = () => onChange(cb.checked);
   const sp = document.createElement('span'); sp.textContent = label;
-  const ct = document.createElement('span'); ct.className = 'cnt'; ct.textContent = count == null ? '' : count + ' img';
+  const ct = document.createElement('span'); ct.className = 'cnt'; ct.textContent = count == null ? '' : count + ' pokémons';
   row.appendChild(cb); row.appendChild(sp); row.appendChild(ct);
   return row;
 }
@@ -780,7 +780,7 @@ function renderTri(keepScroll) {
   body.innerHTML = '';
   if (tri.mode === 'none') {
     const d = document.createElement('div'); d.className = 'empty';
-    d.textContent = "Aucun tri : toutes les images (hors mémoire) sont dans la roue. Choisis « Par génération » ou « Par jeu » pour filtrer.";
+    d.textContent = "Aucun tri : tous les pokémons (hors mémoire) sont dans la roue. Choisis « Par génération » ou « Par jeu » pour filtrer.";
     body.appendChild(d);
   } else if (tri.mode === 'gen') {
     const sel = new Set(tri.gens);
@@ -815,7 +815,7 @@ function renderTri(keepScroll) {
   $('triClear').style.display = tri.mode === 'none' ? 'none' : '';
   const unk = fullList.filter(e => fileInfo(e).n == null).length;
   const active = (tri.mode === 'gen' && tri.gens.length) || (tri.mode === 'game' && tri.games.length);
-  $('triNote').textContent = (fullList.length ? all.length + " image(s) dans la roue" : "Liste non chargée") +
+  $('triNote').textContent = (fullList.length ? all.length + " pokémon(s) dans la roue" : "Liste non chargée") +
     (tri.mode !== 'none' && !active ? " · rien de coché = pas de filtre" : "") +
     (active && unk ? " · " + unk + " fichier(s) sans numéro ignoré(s)" : "");
   body.scrollTop = keepScroll ? top : 0;
