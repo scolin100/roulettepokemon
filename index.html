@@ -167,6 +167,28 @@
     --vig:rgba(0,0,0,.68); --card:rgba(12,4,26,.62); --card2:rgba(12,4,26,.45); --ray:rgba(255,140,0,.10); }
   html[data-theme="noel"] { --blue:#0f5a3a; --orange:#FFD34D; --acc-rgb:255,211,77; --glow:rgba(255,245,200,.45); --glow-l:rgba(255,245,200,.32);
     --vig:rgba(0,35,18,.62); --card:rgba(4,38,24,.6); --card2:rgba(4,38,24,.4); --ray:rgba(255,255,255,.10); }
+  html[data-theme="rouge"] { --blue:#B3212B; --orange:#2EE6A6; --acc-rgb:46,230,166; --glow:rgba(220,155,159,.5); --glow-l:rgba(220,155,159,.36);
+    --vig:rgba(50,9,12,.62); --card:rgba(32,5,7,.62); --card2:rgba(32,5,7,.42); --ray:rgba(255,255,255,.10); }
+  html[data-theme="vert"] { --blue:#168A47; --orange:#FF4F9A; --acc-rgb:255,79,154; --glow:rgba(150,202,172,.5); --glow-l:rgba(150,202,172,.36);
+    --vig:rgba(6,38,19,.62); --card:rgba(3,24,12,.62); --card2:rgba(3,24,12,.42); --ray:rgba(255,255,255,.10); }
+  html[data-theme="violet"] { --blue:#6D35D6; --orange:#FFD21F; --acc-rgb:255,210,31; --glow:rgba(189,164,236,.5); --glow-l:rgba(189,164,236,.36);
+    --vig:rgba(30,14,59,.62); --card:rgba(19,9,38,.62); --card2:rgba(19,9,38,.42); --ray:rgba(255,255,255,.10); }
+  html[data-theme="jaune"] { --blue:#E3AE00; --orange:#4B2FE0; --acc-rgb:75,47,224; --glow:rgba(242,218,140,.5); --glow-l:rgba(242,218,140,.36);
+    --vig:rgba(63,48,0,.62); --card:rgba(40,31,0,.62); --card2:rgba(40,31,0,.42); --ray:rgba(255,255,255,.10); }
+  html[data-theme="rose"] { --blue:#D6337F; --orange:#1FE0C4; --acc-rgb:31,224,196; --glow:rgba(236,163,197,.5); --glow-l:rgba(236,163,197,.36);
+    --vig:rgba(59,14,35,.62); --card:rgba(38,9,22,.62); --card2:rgba(38,9,22,.42); --ray:rgba(255,255,255,.10); }
+  html[data-theme="turquoise"] { --blue:#0E8F9A; --orange:#FF6A3D; --acc-rgb:255,106,61; --glow:rgba(146,204,209,.5); --glow-l:rgba(146,204,209,.36);
+    --vig:rgba(3,40,43,.62); --card:rgba(2,25,27,.62); --card2:rgba(2,25,27,.42); --ray:rgba(255,255,255,.10); }
+  html[data-theme="valentin"] { --blue:#a3154f; --orange:#FFC2D6; --acc-rgb:255,194,214; --glow:rgba(255,150,190,.5); --glow-l:rgba(255,150,190,.36);
+    --vig:rgba(60,0,25,.65); --card:rgba(50,4,24,.62); --card2:rgba(50,4,24,.42); --ray:rgba(255,200,220,.12); }
+  html[data-theme="muguet"] { --blue:#1f7a4d; --orange:#F4FFF0; --acc-rgb:244,255,240; --glow:rgba(210,255,220,.5); --glow-l:rgba(210,255,220,.36);
+    --vig:rgba(0,40,20,.65); --card:rgba(2,40,22,.62); --card2:rgba(2,40,22,.42); --ray:rgba(255,255,255,.12); }
+  html[data-theme="musique"] { --blue:#2b1b7a; --orange:#38E8FF; --acc-rgb:56,232,255; --glow:rgba(160,140,255,.5); --glow-l:rgba(160,140,255,.36);
+    --vig:rgba(10,0,50,.65); --card:rgba(10,4,46,.62); --card2:rgba(10,4,46,.42); --ray:rgba(255,255,255,.12); }
+  html[data-theme="national"] { --blue:#12399e; --orange:#FF3B3B; --acc-rgb:255,59,59; --glow:rgba(150,180,255,.5); --glow-l:rgba(150,180,255,.36);
+    --vig:rgba(0,10,70,.65); --card:rgba(4,14,62,.62); --card2:rgba(4,14,62,.42); --ray:rgba(255,255,255,.12); }
+  html[data-theme="diamant"] { --blue:#0b2a6b; --orange:#7FE9FF; --acc-rgb:127,233,255; --glow:rgba(127,233,255,.5); --glow-l:rgba(127,233,255,.36);
+    --vig:rgba(0,10,50,.65); --card:rgba(4,16,60,.62); --card2:rgba(4,16,60,.42); --ray:rgba(255,255,255,.12); }
   html .bubble.emo { border:none; border-radius:0; background:none; text-align:center; }
   html .bubble.fall { bottom:auto; top:-220px; animation-name:fall; }
   @keyframes fall { 0% { transform:translate(0,0) rotate(0deg); opacity:0; } 10% { opacity:1; } 90% { opacity:1; }
@@ -174,6 +196,16 @@
   #themeSel { width:100%; background:#1e2432; color:#fff; border:1px solid #3a4258; border-radius:8px; padding:10px 12px; font-size:14px; }
   .themeRow label { display:block; margin-bottom:6px; font-size:14px; }
   @media (max-width: 820px), (max-height: 520px) { #themeSel { padding:14px 12px; font-size:16px; } }
+  #triBody { flex:1; overflow:auto; border:1px solid #2a3042; border-radius:8px; }
+  .chk { display:flex; align-items:center; gap:10px; padding:9px 12px; border-bottom:1px solid #1f2535; font-size:14px; cursor:pointer; }
+  .chk:hover { background:#171b27; }
+  .chk.sub { padding-left:38px; font-size:13px; }
+  .chk input { width:18px; height:18px; flex:none; accent-color:var(--orange); }
+  .chk .cnt { margin-left:auto; opacity:.55; font-size:12px; flex:none; }
+  .ghead { padding:8px 12px; background:#171b27; font-size:12px; opacity:.85; position:sticky; top:0; z-index:1; }
+  .formopt { padding:12px; font-size:13px; display:flex; flex-direction:column; gap:8px; line-height:1.35; }
+  .formopt label { display:flex; gap:8px; align-items:flex-start; cursor:pointer; }
+  .formopt input { accent-color:var(--orange); margin-top:2px; }
 </style>
 </head>
 <body>
@@ -198,8 +230,9 @@
   <div id="info">Chargement de la liste…</div>
   <label class="btn" id="pickLabel" style="display:none">📁 Choisir le dossier à la main<input id="folder" type="file" webkitdirectory multiple></label>
   <div class="themeRow"><label for="themeSel">🎨 Thème</label>
-    <select id="themeSel"><option value="auto">Auto</option><option value="default">Par défaut</option><option value="halloween">Halloween 🎃</option><option value="noel">Noël 🎄</option></select></div>
+    <select id="themeSel"><option value="auto">Auto</option><option value="default">Bleu</option><option value="rouge">Rouge</option><option value="vert">Vert</option><option value="violet">Violet</option><option value="jaune">Jaune</option><option value="rose">Rose</option><option value="turquoise">Turquoise</option><option value="halloween">Halloween 🎃</option><option value="noel">Noël 🎄</option></select></div>
   <button id="soundBtn">🔊 Son activé</button>
+  <button id="triBtn">🔎 Trier par génération / jeu</button>
   <button id="histBtn">📜 Historique des tirages</button>
   <button id="manageMem">🗂 Gérer la mémoire</button>
   <button id="resetMem">↺ Réinitialiser la mémoire</button>
@@ -221,7 +254,7 @@
 <div id="mem" class="modal hidden">
   <div class="box">
     <div class="mhead"><strong>Mémoire des images</strong><button id="memClose">✕</button></div>
-    <div class="tabs"><button id="tabRem" class="on">Retirées (0)</button><button id="tabAv">Disponibles (0)</button></div>
+    <div class="tabs"><button id="tabRem" class="on">Retirées (0)</button><button id="tabAv">Disponibles (0)</button><button id="tabTri">Hors tri (0)</button></div>
     <input id="memSearch" type="text" placeholder="Rechercher un nom…" autocomplete="off">
     <div id="memList"></div>
     <div class="mfoot"><button id="memAll">Tout remettre</button><span id="memNote"></span></div>
@@ -233,6 +266,15 @@
     <div class="mhead"><strong>Historique des tirages</strong><button id="histClose">✕</button></div>
     <div id="histList"></div>
     <div class="mfoot"><span style="display:flex;gap:8px"><button id="histCopy">Copier la liste</button><button id="histClear">Effacer</button></span><span id="histNote"></span></div>
+  </div>
+</div>
+
+<div id="tri" class="modal hidden">
+  <div class="box">
+    <div class="mhead"><strong>Tri des images</strong><button id="triClose">✕</button></div>
+    <div class="tabs"><button id="tabNone">Aucun tri</button><button id="tabGen">Par génération</button><button id="tabGame">Par jeu</button></div>
+    <div id="triBody"></div>
+    <div class="mfoot"><span style="display:flex;gap:8px"><button id="triAll">Tout cocher</button><button id="triClear">Tout décocher</button></span><span id="triNote"></span></div>
   </div>
 </div>
 
@@ -299,7 +341,7 @@ $('folder').onchange = e => {
 function ready() {
   fullList = all.slice();
   const before = all.length;
-  all = all.filter(e => !removed.has(e.id));      // exclut les images déjà retirées lors des sessions précédentes
+  all = all.filter(visible);      // exclut les images retirées (mémoire) et celles hors tri
   const hidden = before - all.length;
   updateMemBtn();
   if (!all.length) {
@@ -308,7 +350,7 @@ function ready() {
     return;
   }
   info.textContent = all.length + " images disponibles" + (hidden ? " (" + hidden + " déjà retirées)" : "") +
-    " — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement";
+    " — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement" + triLabel();
   spinBtn.disabled = false;
   showIdle();
 }
@@ -488,10 +530,10 @@ function fanfare() {
 let memTab = 'rem';
 const MEM_MAX = 300;
 function refreshAfterMem() {
-  all = fullList.filter(e => !removed.has(e.id));
+  all = fullList.filter(visible);
   const hidden = fullList.length - all.length;
   info.textContent = all.length + " images disponibles" + (hidden ? " (" + hidden + " retirées)" : "") +
-    " — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement";
+    " — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement" + triLabel();
   spinBtn.disabled = all.length === 0 || state === 'spinning' || state === 'loading';
   if (all.length && !strip.length && state === 'idle') showIdle();
 }
@@ -504,12 +546,15 @@ function renderMem(keepScroll) {
   const q = $('memSearch').value.trim().toLowerCase();
   const byName = (a, b) => a.localeCompare(b);
   const remList = [...removed].sort(byName);
-  const avList = fullList.filter(e => !removed.has(e.id)).map(e => e.id).sort(byName);
+  const avList = fullList.filter(visible).map(e => e.id).sort(byName);
+  const triList = fullList.filter(e => !removed.has(e.id) && !passFilter(e)).map(e => e.id).sort(byName);
   $('tabRem').textContent = 'Retirées (' + remList.length + ')';
   $('tabAv').textContent = 'Disponibles (' + avList.length + ')';
+  $('tabTri').textContent = 'Hors tri (' + triList.length + ')';
   $('tabRem').classList.toggle('on', memTab === 'rem');
   $('tabAv').classList.toggle('on', memTab === 'av');
-  const filtered = (memTab === 'rem' ? remList : avList).filter(id => cleanName(id).toLowerCase().includes(q));
+  $('tabTri').classList.toggle('on', memTab === 'tri');
+  const filtered = (memTab === 'rem' ? remList : memTab === 'tri' ? triList : avList).filter(id => cleanName(id).toLowerCase().includes(q));
   list.innerHTML = '';
   if (!filtered.length) {
     const d = document.createElement('div'); d.className = 'empty';
@@ -519,9 +564,12 @@ function renderMem(keepScroll) {
   filtered.slice(0, MEM_MAX).forEach(id => {
     const row = document.createElement('div'); row.className = 'row';
     const s = document.createElement('span'); s.textContent = cleanName(id); s.title = id;
-    const b = document.createElement('button'); b.textContent = memTab === 'rem' ? 'Remettre' : 'Retirer';
-    b.onclick = () => toggleMem(id);
-    row.appendChild(s); row.appendChild(b); list.appendChild(row);
+    row.appendChild(s);
+    if (memTab !== 'tri') {
+      const b = document.createElement('button'); b.textContent = memTab === 'rem' ? 'Remettre' : 'Retirer';
+      b.onclick = () => toggleMem(id); row.appendChild(b);
+    }
+    list.appendChild(row);
   });
   $('memNote').textContent = filtered.length > MEM_MAX
     ? "300 premiers sur " + filtered.length + " — affine la recherche"
@@ -535,6 +583,7 @@ $('memClose').onclick = closeMem;
 $('mem').addEventListener('mousedown', e => { if (e.target === $('mem')) closeMem(); });
 $('tabRem').onclick = () => { memTab = 'rem'; renderMem(); };
 $('tabAv').onclick = () => { memTab = 'av'; renderMem(); };
+$('tabTri').onclick = () => { memTab = 'tri'; renderMem(); };
 $('memSearch').oninput = () => renderMem();
 $('memAll').onclick = () => {
   if (!removed.size) return;
@@ -644,30 +693,184 @@ $('sheetBack').onclick = closeSheet;
 spinBtn.onclick = () => { closeSheet(); spin(); };
 addEventListener('keydown', e => {
   if (!$('mem').classList.contains('hidden')) { if (e.key === 'Escape') closeMem(); return; }  // fenêtre mémoire ouverte
+  if (!$('tri').classList.contains('hidden')) { if (e.key === 'Escape') closeTri(); return; }
   if (!$('hist').classList.contains('hidden')) { if (e.key === 'Escape') closeHist(); return; } // fenêtre historique ouverte
   if (e.code === 'Space') { e.preventDefault(); if (!spinBtn.disabled) spin(); }
   if (e.key.toLowerCase() === 'h') { $('panel').classList.toggle('hidden'); fit(); }
 });
 // bulles qui montent doucement dans le fond
+// ---- tri par génération / par jeu (Pokédex régionaux officiels) ----
+const GEN_RANGES = [[1,151],[152,251],[252,386],[387,493],[494,649],[650,721],[722,809],[810,905],[906,1025]];
+const GEN_NAMES = ['Kanto','Johto','Hoenn','Sinnoh','Unys','Kalos','Alola','Galar','Paldea'];
+const FORM_GEN = { alola: 7, galar: 8, hisui: 8, paldea: 9 };     // génération d'apparition de la forme régionale
+const TRI_GAMES = [{"id":"rs","gen":3,"name":"Rubis / Saphir","set":"25-28,37-45,54-55,63-68,72-76,81-82,84-85,88-89,100-101,109-112,116-121,127,129-130,169-172,174,177-178,182-184,202-203,214,218-219,222,227,230-232,252-384","forms":[]},{"id":"em","gen":3,"name":"Émeraude","set":"25-28,37-45,54-55,63-68,72-76,81-82,84-85,88-89,100-101,109-112,116-121,127,129-130,169-172,174,177-178,182-184,202-203,214,218-219,222,227,230-232,252-386","forms":[]},{"id":"frlg","gen":3,"name":"Rouge Feu / Vert Feuille","set":"1-151","forms":[]},{"id":"dp","gen":4,"name":"Diamant / Perle","set":"25-26,35-36,41-42,54-55,63-68,72-78,92-95,113,118-119,122,129-130,143,163-164,169,172-173,183-185,190,194-195,198,200-201,203,208,214-215,223-224,226,242,265-269,278-279,298,307-308,315,339-340,349-350,358,387-461,480-484,490","forms":[]},{"id":"pt","gen":4,"name":"Platine","set":"25-26,35-36,41-42,54-55,63-68,72-78,81-82,92-95,108,111-114,118-119,122-123,125-126,129-130,133-137,143,163-164,169,172-173,175-176,183-185,190,193-198,200-201,203,207-208,212,214-215,220-221,223-224,226,228-229,233,239-240,242,265-269,278-282,298-299,307-308,315,333-334,339-340,349-350,355-359,361-362,387-484,487,490","forms":[]},{"id":"hgss","gen":4,"name":"Or HeartGold / Argent SoulSilver","set":"1-251,424,463,465,469,473","forms":[]},{"id":"bw","gen":5,"name":"Noir / Blanc","set":"494-649","forms":[]},{"id":"b2w2","gen":5,"name":"Noir 2 / Blanc 2","set":"19-20,27-28,35-42,54-55,58-59,81-82,86-89,95,108-110,114,120-121,125-127,131-136,169,173-174,179-181,183-184,191-193,196-197,206-208,213-215,220-227,239-240,246-248,278-279,287-289,298-301,304-306,315,320-323,325-326,328-330,333-338,341-344,351,353-354,357,359,363-365,374-376,406-407,415-416,418-419,425-428,436-437,447-448,451-455,458,461-463,465-467,469-473,476,494-649","forms":[]},{"id":"xy","gen":6,"name":"X / Y","set":"1-18,21-34,39-45,50-51,54-55,60-76,79-88,90-95,100-105,108,111-112,115-124,127-136,142-150,161-172,174,179-189,193-199,202,206-230,235,238,241,246-248,261-264,270-272,276-282,290-321,324-330,333-342,352-354,358-360,366-373,396-400,406-407,412-419,425-426,430,433-435,438-439,441,443-445,447-455,458-464,469-473,475-476,479,504-505,509-516,524-528,531-534,538-539,543-545,550-553,557-561,568-571,574-584,587-591,594,597-598,607-625,631-635,650-721","forms":[]},{"id":"oras","gen":6,"name":"Rubis Oméga / Saphir Alpha","set":"25-28,37-45,54-55,63-68,72-76,81-82,84-85,88-89,100-101,109-112,116-121,127,129-130,169-172,174,177-178,182-184,202-203,214,218-219,222,227,230-232,252-386,406-407,433,462,464,475-478","forms":[]},{"id":"sm","gen":7,"name":"Soleil / Lune","set":"10-12,19-22,25-28,35-42,46-47,50-68,72-76,79-82,88-94,96-97,102-105,113,115,118-121,123,125-137,142-143,147-149,165-174,185-186,196-200,209-210,212,215,222-223,225,227,233,235,239-242,278-279,283-284,296-297,299,302,318-321,324,327-330,339-340,349-351,359,361-362,369-376,408-411,422-423,425-426,429-430,438,440,443-448,456-457,461-462,466-467,470-471,474,476,478,506-508,524-526,546-549,551-553,564-569,582-584,587,594,627-630,661-663,674-675,700,703-709,718,722-802","forms":["alola"]},{"id":"usum","gen":7,"name":"Ultra-Soleil / Ultra-Lune","set":"10-12,19-28,35-42,46-47,50-68,72-76,79-82,86-94,96-97,102-105,108,113,115,118-143,147-149,163-174,177-181,185-186,190,196-200,204-206,209-210,212,214-215,222-229,233,235,238-242,246-248,278-279,283-284,296-297,299,302-303,309-310,318-321,324,327-330,339-354,357,359,361-362,366-376,382,408-411,422-431,438-440,443-448,456-458,461-467,470-471,474,476,478,506-508,519-520,524-526,546-553,559-560,564-573,582-584,587,592-594,605-606,619-625,627-630,636-637,661-663,667-671,674-676,686-687,690-693,696-709,714-715,718,722-807","forms":["alola"]},{"id":"lgpe","gen":7,"name":"Let's Go Pikachu / Évoli","set":"1-151,808-809","forms":["alola"]},{"id":"swsh","gen":8,"name":"Épée / Bouclier","set":"4-6,10-12,25-26,35-38,43-45,50-53,58-59,66-68,77-78,83,90-95,98-99,106-107,109-112,118-119,122,129-136,143,163-164,170-173,175-178,182,185,194-197,202,208,211,213,215,220-226,236-237,246-248,263-264,270-275,278-282,290-292,302-303,309-310,315,320-321,324,328-330,337-344,349-350,355-356,360-362,406-407,415-416,420-423,425-426,434-439,446-454,458-461,464,468,470-471,473,475,477-479,509-510,517-521,524-530,532-539,546-547,550,554-563,568-569,572-579,582-584,588-589,592-593,595-601,605-614,616-618,622-625,627-635,659-660,674-675,677-689,694-695,700-701,704-706,708-715,736-738,742-743,746-752,755-763,765-768,771-773,776-778,780-784,810-890","forms":["galar"],"dlc":[{"id":"swsh_isle","name":"L'Île solitaire de l'Armure","set":"1-3,7-9,25-28,39-40,54-55,60-65,72-73,79-82,90-91,98-99,102-105,108,111-121,123,127-130,132,137,170-172,174,183-184,186,194-195,199,206,212,214,223-224,226-227,230,233,241-242,278-282,293-295,298,318-321,324,339-342,403-405,415-416,425-428,440,451-454,458,462-465,474-475,506-508,524-528,543-545,548-549,551-553,557-560,570-571,587-593,616-617,619-621,624-630,636-637,661-663,686-687,690-693,702,704-707,744-748,753-754,757-758,764-770,782-784,819-820,824-826,833-834,840-847,852-853,871,877,891-893"},{"id":"swsh_crown","name":"Les Terres enneigées de la Couronne","set":"29-36,41-42,77-78,122,124-126,129-131,133-136,138-149,169,173,196-197,213,215,220-221,225,238-240,246-248,263-264,302-306,333-334,339-340,343-350,359,361-365,369,371-379,436-437,439,442-448,459-461,466-467,470-471,473,478,531-534,546-547,550,554-555,564-567,574-579,582-584,588-589,595-598,607-609,613-617,621-623,631-635,638-640,696-700,703,708-709,712-715,751-752,778,781,819-823,829-832,835-839,850-851,854-862,866,871-879,885-887,894-898"}]},{"id":"bdsp","gen":8,"name":"Diamant Étincelant / Perle Scintillante","set":"1-493","forms":[]},{"id":"pla","gen":8,"name":"Légendes Pokémon : Arceus","set":"25-26,35-38,41-42,46-47,54-55,58-59,63-68,72-78,81-82,92-95,100-101,108,111-114,122-123,125-126,129-130,133-137,143,155-157,169,172-173,175-176,185,190,193,196-198,200-201,207-208,211-212,214-217,220-221,223-224,226,233-234,239-240,242,265-269,280-282,299,315,339-340,355-356,358,361-365,387-493,501-503,548-550,570-571,627-628,641-642,645,700,704-706,712-713,722-724,899-905","forms":["hisui"]},{"id":"sv","gen":9,"name":"Écarlate / Violet","set":"25-26,39-40,48-59,79-82,88-94,96-97,100-101,113,123,128-130,132-136,147-149,172,174,179-181,183-189,191-192,194,196-200,203-206,211-212,214-217,225,228-229,231-232,234,242,246-248,278-289,296-298,302,307-308,316-317,322-326,331-336,339-340,353-354,357,361-362,370-373,396-398,401-405,415-419,422-423,425-426,429-430,434-438,440,442-445,447-450,453-454,456-457,459-462,470-471,475,478-479,548-553,570-571,574-576,585-586,590-591,594,602-604,610-615,624-625,627-628,633-637,661-673,690-693,700-702,704-707,712-715,734-735,739-741,744-745,747-750,753-754,757-758,761-763,765-766,769-770,775,778-779,819-823,833-834,837-844,846-849,854-861,870-876,878-879,885-887,906-1008","forms":["paldea"],"dlc":[{"id":"sv_teal","name":"Le Masque turquoise","set":"23-28,35-38,56-62,69-71,74-76,92-94,109-110,129-130,143,161-164,167,172-173,185-186,190-191,193-195,206-207,214-215,218-221,228-229,234,261-262,270-275,280-284,299,313-314,325-326,339-342,349-350,355-356,358,361-362,396-398,401-405,417,424,433,436-438,443-448,461,469,472-473,475-478,532-534,540-542,548-550,580-581,602-604,607-609,619-620,624-625,629-630,703-706,708-709,714-715,736-738,741-745,749-750,753-754,757-758,778,782-784,819-820,833-834,840-842,845-847,856-861,876-877,901-902,924-925,948-949,962,968-970,979,982-983,1011-1017"},{"id":"sv_indigo","name":"Le Disque indigo","set":"1-9,27-28,37-38,43-45,48-51,72-76,79-82,84-89,102-103,106-107,111-113,116-117,123,125-126,128,131,137,152-160,170-171,182,199,203,209-212,227,230,233,235-237,239-240,242,252-260,287-289,311-312,322-324,328-330,333-336,370,374-376,387-395,408-411,440,456-457,459-460,462,464,466-467,474,479,495-503,522-523,529-530,546-547,551-553,559-560,572-579,585-586,594-596,602-604,610-614,622-623,627-630,650-658,661-663,667-668,677-678,686-687,722-733,739-741,751-752,764,774,779,810-818,854-855,868-869,884,900,904,953-954,981,1009-1010,1018-1025"}]},{"id":"za","gen":9,"name":"Légendes Pokémon : Z-A","set":"1-9,13-18,23-26,35-36,63-71,79-80,92-95,115,120-121,123,127,129-130,133-136,142,147-150,152-154,158-160,167-168,172-173,179-181,196-197,199,208,212,214,225,227-229,246-248,280-282,302-310,315,318-319,322-323,333-334,353-354,359,361-362,371-376,406-407,427-428,443-445,447-450,459-460,470-471,475,478,498-500,504-505,511-516,529-531,543-545,551-553,559-560,568-569,582-584,587,602-604,607-609,618,650-719,780,870","forms":["eternelle"],"dlc":[{"id":"za_mega","name":"Méga-Dimension","set":"39-42,52-53,56-57,83,104-105,122,137,169,174,211,233,252-260,316-317,325-326,335-336,349-350,352,358,380-384,396-398,433,439,474,479,485,491,509-510,517-518,538-539,562-563,590-591,615,622-623,638-640,647-649,720-721,739-740,767-770,778,801-802,807-809,821-823,827-828,848-849,852-853,863,865-867,876-877,900,904,926-927,931-937,942-945,951-952,957-959,967,969-973,977-979,996-1000"}]}];
+function genOf(n) { for (let i = 0; i < GEN_RANGES.length; i++) if (n >= GEN_RANGES[i][0] && n <= GEN_RANGES[i][1]) return i + 1; return 0; }
+function parseSet(s) {
+  const out = new Set();
+  s.split(',').forEach(p => { const q = p.split('-').map(Number); for (let i = q[0]; i <= (q[1] || q[0]); i++) out.add(i); });
+  return out;
+}
+// liste à plat : jeux + DLC (chaque DLC peut être coché séparément)
+const TRI_ITEMS = [];
+TRI_GAMES.forEach(g => {
+  TRI_ITEMS.push({ id: g.id, gen: g.gen, name: g.name, set: parseSet(g.set), forms: g.forms, dlc: false });
+  (g.dlc || []).forEach(d => TRI_ITEMS.push({ id: d.id, gen: g.gen, name: d.name, set: parseSet(d.set), forms: g.forms, dlc: true }));
+});
+// lit le numéro et la forme (régionale / fleur éternelle) dans le nom du fichier : "0026 - raichu d'alola.gif"
+function fileInfo(e) {
+  if (e._info) return e._info;
+  const base = e.id.replace(/\.[^.]+$/, '');
+  const m = base.match(/^\s*(\d{1,4})/);
+  const n = m ? parseInt(m[1], 10) : null;
+  const t = base.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`´]/g, "'");
+  let form = null;
+  if (/alola/.test(t)) form = 'alola';
+  else if (/galar/.test(t)) form = 'galar';
+  else if (/hisui/.test(t)) form = 'hisui';
+  else if (/paldea/.test(t)) form = 'paldea';
+  else if (n === 670 && /eternel|eternal/.test(t)) form = 'eternelle';
+  return (e._info = { n, form });
+}
+function matchGen(e, gens, formGen) {
+  const f = fileInfo(e); if (f.n == null) return false;
+  const g = (f.form && FORM_GEN[f.form] && formGen === 'form') ? FORM_GEN[f.form] : genOf(f.n);
+  return gens.has(g);
+}
+function matchItem(e, item) {
+  const f = fileInfo(e); if (f.n == null) return false;
+  if (!item.set.has(f.n)) return false;
+  return f.form ? item.forms.includes(f.form) : true;
+}
+const TRI_KEY = 'roulette_tri';
+let tri = { mode: 'none', gens: [], games: [], formGen: 'form' };
+try { const s = JSON.parse(localStorage.getItem(TRI_KEY) || 'null'); if (s && typeof s === 'object') tri = Object.assign(tri, s); } catch (e) {}
+function saveTri() { try { localStorage.setItem(TRI_KEY, JSON.stringify(tri)); } catch (e) {} }
+function passFilter(e) {
+  if (tri.mode === 'gen' && tri.gens.length) return matchGen(e, new Set(tri.gens), tri.formGen);
+  if (tri.mode === 'game' && tri.games.length) {
+    const sel = TRI_ITEMS.filter(it => tri.games.includes(it.id));
+    return sel.some(it => matchItem(e, it));
+  }
+  return true;
+}
+function visible(e) { return !removed.has(e.id) && passFilter(e); }
+function triLabel() {
+  if (tri.mode === 'gen' && tri.gens.length) return ' — tri : ' + tri.gens.slice().sort((a, b) => a - b).map(g => g + 'G').join(', ');
+  if (tri.mode === 'game' && tri.games.length) return ' — tri : ' + tri.games.length + ' jeu(x)/DLC';
+  return '';
+}
+
+// ---- fenêtre de tri ----
+function triCount(fn) { return fullList.filter(e => !removed.has(e.id) && fn(e)).length; }
+function chk(label, checked, count, onChange, sub) {
+  const row = document.createElement('label'); row.className = 'chk' + (sub ? ' sub' : '');
+  const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = checked; cb.onchange = () => onChange(cb.checked);
+  const sp = document.createElement('span'); sp.textContent = label;
+  const ct = document.createElement('span'); ct.className = 'cnt'; ct.textContent = count == null ? '' : count + ' img';
+  row.appendChild(cb); row.appendChild(sp); row.appendChild(ct);
+  return row;
+}
+function setTri(patch) { Object.assign(tri, patch); saveTri(); if (fullList.length) refreshAfterMem(); renderTri(true); }
+function toggleIn(arr, v, on) { const s = new Set(arr); if (on) s.add(v); else s.delete(v); return [...s]; }
+function renderTri(keepScroll) {
+  const body = $('triBody'), top = body.scrollTop;
+  ['None', 'Gen', 'Game'].forEach(k => $('tab' + k).classList.toggle('on', tri.mode === k.toLowerCase()));
+  body.innerHTML = '';
+  if (tri.mode === 'none') {
+    const d = document.createElement('div'); d.className = 'empty';
+    d.textContent = "Aucun tri : toutes les images (hors mémoire) sont dans la roue. Choisis « Par génération » ou « Par jeu » pour filtrer.";
+    body.appendChild(d);
+  } else if (tri.mode === 'gen') {
+    const sel = new Set(tri.gens);
+    for (let g = 1; g <= 9; g++) {
+      const r = GEN_RANGES[g - 1];
+      body.appendChild(chk(g + 'G · ' + GEN_NAMES[g - 1] + ' (n°' + r[0] + '–' + r[1] + ')', sel.has(g),
+        fullList.length ? triCount(e => matchGen(e, new Set([g]), tri.formGen)) : null,
+        on => setTri({ gens: toggleIn(tri.gens, g, on) })));
+    }
+    const box = document.createElement('div'); box.className = 'formopt';
+    box.innerHTML = '<div><strong>Formes régionales</strong> (d\'Alola, de Galar, d\'Hisui, de Paldea)</div>';
+    [['form', "rattachées à la génération du pokémon (Raichu d'Alola → 7G)"], ['species', "rattachées à la génération de l'espèce de base (Raichu d'Alola → 1G)"]].forEach(([v, t]) => {
+      const l = document.createElement('label'); const r = document.createElement('input');
+      r.type = 'radio'; r.name = 'formGen'; r.checked = tri.formGen === v; r.onchange = () => setTri({ formGen: v });
+      l.appendChild(r); l.appendChild(document.createTextNode(' ' + t)); box.appendChild(l);
+    });
+    body.appendChild(box);
+  } else {
+    let lastGen = 0;
+    TRI_ITEMS.forEach(it => {
+      if (!it.dlc && it.gen !== lastGen) {
+        lastGen = it.gen;
+        const h = document.createElement('div'); h.className = 'ghead';
+        h.textContent = 'Jeux de ' + it.gen + 'ᵉ génération'; body.appendChild(h);
+      }
+      body.appendChild(chk((it.dlc ? 'DLC · ' : '') + it.name, tri.games.includes(it.id),
+        fullList.length ? triCount(e => matchItem(e, it)) : null,
+        on => setTri({ games: toggleIn(tri.games, it.id, on) }), it.dlc));
+    });
+  }
+  $('triAll').style.display = tri.mode === 'none' ? 'none' : '';
+  $('triClear').style.display = tri.mode === 'none' ? 'none' : '';
+  const unk = fullList.filter(e => fileInfo(e).n == null).length;
+  const active = (tri.mode === 'gen' && tri.gens.length) || (tri.mode === 'game' && tri.games.length);
+  $('triNote').textContent = (fullList.length ? all.length + " image(s) dans la roue" : "Liste non chargée") +
+    (tri.mode !== 'none' && !active ? " · rien de coché = pas de filtre" : "") +
+    (active && unk ? " · " + unk + " fichier(s) sans numéro ignoré(s)" : "");
+  body.scrollTop = keepScroll ? top : 0;
+}
+function openTri() { closeSheet(); $('tri').classList.remove('hidden'); renderTri(); }
+function closeTri() { $('tri').classList.add('hidden'); }
+$('triBtn').onclick = openTri;
+$('triClose').onclick = closeTri;
+$('tri').addEventListener('mousedown', e => { if (e.target === $('tri')) closeTri(); });
+$('tabNone').onclick = () => setTri({ mode: 'none' });
+$('tabGen').onclick = () => setTri({ mode: 'gen' });
+$('tabGame').onclick = () => setTri({ mode: 'game' });
+$('triAll').onclick = () => setTri(tri.mode === 'gen' ? { gens: [1,2,3,4,5,6,7,8,9] } : { games: TRI_ITEMS.map(i => i.id) });
+$('triClear').onclick = () => setTri(tri.mode === 'gen' ? { gens: [] } : { games: [] });
+
 // ---- thèmes : Par défaut / Halloween / Noël (Auto = selon la date) ----
 const THEMES = {
-  default:   { name: 'Par défaut', conf: ['#FF8C00', '#FFD34D', '#ffffff', '#7fb0ff', '#ff5a7a', '#7dffb2'], emo: null },
+  default:   { name: 'Bleu', conf: ['#FF8C00', '#FFD34D', '#ffffff', '#7fb0ff', '#ff5a7a', '#7dffb2'], emo: null },
+  rouge: { name: 'Rouge', conf: ['#2EE6A6', '#ffffff', '#FFD34D', '#7fffd4', '#ff8fa3', '#9bffd9'], emo: null },
+  vert: { name: 'Vert', conf: ['#FF4F9A', '#ffffff', '#FFD34D', '#ffb3d1', '#7fb0ff', '#c8ffd9'], emo: null },
+  violet: { name: 'Violet', conf: ['#FFD21F', '#ffffff', '#ffe680', '#c9a8ff', '#ff8fd0', '#7dffb2'], emo: null },
+  jaune: { name: 'Jaune', conf: ['#4B2FE0', '#ffffff', '#7b61ff', '#FFF3B0', '#ff5a7a', '#2a9d5c'], emo: null },
+  rose: { name: 'Rose', conf: ['#1FE0C4', '#ffffff', '#FFD34D', '#9ffff0', '#ffb3d1', '#7fb0ff'], emo: null },
+  turquoise: { name: 'Turquoise', conf: ['#FF6A3D', '#ffffff', '#FFD34D', '#9ff4ff', '#ff9f80', '#c8ffd9'], emo: null },
+  valentin:  { name: 'Saint-Valentin 💖', conf: ['#ff4d79', '#FFC2D6', '#ffffff', '#ff8fb1', '#ffd6e4', '#e63946'], emo: ['💖', '💕', '❤️', '💘', '🌹', '💗'], fall: false },
+  muguet:    { name: 'Fête du Muguet 🌿', conf: ['#F4FFF0', '#2a9d5c', '#ffffff', '#b7f5c8', '#FFD34D', '#9be7b5'], emo: ['🌿', '💐', '🤍', '🍃', '🔔', '🌿'], fall: false },
+  musique:   { name: 'Fête de la musique 🎶', conf: ['#38E8FF', '#FF4FD8', '#FFD34D', '#ffffff', '#9b5de5', '#7dff5a'], emo: ['🎵', '🎶', '🎸', '🥁', '🎤', '🎹'], fall: false },
+  national:  { name: 'Fête nationale 🇫🇷', conf: ['#FF3B3B', '#ffffff', '#4d7bff', '#ffffff', '#FF3B3B', '#4d7bff'], emo: ['🎆', '🎇', '🇫🇷', '✨', '🎆', '🎇'], fall: false },
+  diamant:   { name: 'Diamants 💎', conf: ['#7FE9FF', '#ffffff', '#b9a8ff', '#9ff4ff', '#ffd6f5', '#7fb0ff'], emo: ['💎'], fall: true },
   halloween: { name: 'Halloween 🎃', conf: ['#FF7A00', '#ffb347', '#ffffff', '#9b5de5', '#c77dff', '#7dff5a'], emo: ['🎃', '🦇', '👻', '🕸️', '🎃', '🦇'], fall: false },
   noel:      { name: 'Noël 🎄', conf: ['#e63946', '#2a9d5c', '#FFD34D', '#ffffff', '#c1121f', '#7fd1ae'], emo: ['❄️', '❄️', '❄️', '⭐', '🎄', '⛄'], fall: true }
 };
 const THEME_KEY = 'roulette_theme';
 let themeChoice = 'auto';
 try { themeChoice = localStorage.getItem(THEME_KEY) || 'auto'; } catch (e) {}
-if (themeChoice !== 'auto' && !THEMES[themeChoice]) themeChoice = 'auto';
+const TEST = false;                                  // true uniquement dans la version de test
+const SPECIAL = ['valentin', 'muguet', 'musique', 'national', 'diamant', 'halloween', 'noel'];
+if (themeChoice !== 'auto' && (!THEMES[themeChoice] || (!TEST && SPECIAL.includes(themeChoice) && autoTheme() !== themeChoice))) themeChoice = 'auto';
 // Thème automatique : actif 7 jours avant la date et jusqu'à 2 jours après (inclus)
 function inWindow(month, day, now) {
   const y = now.getFullYear();
   return now >= new Date(y, month, day - 7) && now <= new Date(y, month, day + 2, 23, 59, 59, 999);
 }
+// Jours spéciaux (27 février, 13 avril) : chute de diamants à la place des bulles
+function diamondDay(now) {
+  now = now || new Date(); const m = now.getMonth(), d = now.getDate();
+  return (m === 1 && d === 27) || (m === 3 && d === 13);
+}
+function sameDay(month, day, now) { return now.getMonth() === month && now.getDate() === day; }
 function autoTheme(now) {
   now = now || new Date();
   if (inWindow(9, 31, now)) return 'halloween';    // Halloween : 24 oct → 2 nov
-  if (inWindow(11, 25, now)) return 'noel';        // Noël : 18 déc → 27 déc
+  if (inWindow(11, 25, now)) return 'noel';
+  if (sameDay(1, 14, now)) return 'valentin';      // Saint-Valentin : 14 fév uniquement
+  if (sameDay(4, 1, now)) return 'muguet';         // 1er mai uniquement
+  if (sameDay(5, 21, now)) return 'musique';       // 21 juin uniquement
+  if (sameDay(6, 14, now)) return 'national';      // 14 juillet uniquement        // Noël : 18 déc → 27 déc
   return 'default';
 }
 let curTheme = 'default', customBubble = null, customTested = false, decorSeq = 0;
@@ -677,7 +880,7 @@ function buildDecor() {
   const go = () => {
     if (seq !== decorSeq) return;
     const bg = $('bg'); bg.querySelectorAll('.bubble').forEach(e => e.remove());
-    const th = THEMES[curTheme], url = (!th.emo && customBubble) ? customBubble : null;
+    const th = diamondDay() ? { emo: ['💎'], fall: true } : THEMES[curTheme], url = (!th.emo && customBubble) ? customBubble : null;
     for (let i = 0; i < (LITE ? 8 : 22); i++) {
       const b = document.createElement('div'), s = 30 + Math.random() * 130;
       let cls = 'bubble', css = 'width:' + s + 'px;height:' + s + 'px;left:' + (Math.random() * 100) + '%;' +
@@ -706,6 +909,9 @@ function applyTheme() {
   $('themeSel').options[0].textContent = 'Auto (actuel : ' + THEMES[autoTheme()].name + ')';
   if (first || nt !== curTheme) { curTheme = nt; buildDecor(); }
 }
+if (!TEST) ['halloween', 'noel'].forEach(v => {      // visibles dans la liste uniquement pendant leur période
+  if (autoTheme() !== v) { const o = $('themeSel').querySelector('option[value="' + v + '"]'); if (o) o.remove(); }
+});
 $('themeSel').value = themeChoice;
 $('themeSel').onchange = e => {
   themeChoice = e.target.value;
