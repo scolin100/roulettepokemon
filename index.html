@@ -170,6 +170,7 @@
   <label class="opt"><input type="checkbox" id="remove"> Retirer l'image après tirage</label>
   <div id="info">Chargement de la liste…</div>
   <label class="btn" id="pickLabel" style="display:none">📁 Choisir le dossier à la main<input id="folder" type="file" webkitdirectory multiple></label>
+  <button id="soundBtn">🔊 Son activé</button>
   <button id="manageMem">🗂 Gérer la mémoire</button>
   <button id="resetMem">↺ Réinitialiser la mémoire</button>
   <div class="social">
@@ -295,10 +296,14 @@ async function loadRandom(n) {
 }
 function rnd(n) { return Math.floor(Math.random() * n); }
 function buildStrip(loaded, len) {
-  const out = []; let prev = null;
+  // Une même image ne peut pas réapparaître avant au moins `gap` cartes : plus de doublons visibles en même temps.
+  const out = [], recent = [];
+  const gap = Math.min(12, loaded.length - 1);
   for (let i = 0; i < len; i++) {
-    let p; do { p = loaded[rnd(loaded.length)]; } while (loaded.length > 1 && p === prev);
-    out.push(Object.assign({}, p)); prev = p;
+    let p;
+    do { p = loaded[rnd(loaded.length)]; } while (gap > 0 && recent.includes(p));
+    out.push(Object.assign({}, p));
+    recent.push(p); if (recent.length > gap) recent.shift();
   }
   return out;
 }
@@ -412,15 +417,25 @@ function fitLabel(el) {
 // ---- sons ----
 let ac;
 function initAudio() { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) {} }
+// ---- bouton son (mémorisé entre les visites) ----
+let muted = false;
+try { muted = localStorage.getItem('roulette_muet') === '1'; } catch (e) {}
+function updateSoundBtn() { $('soundBtn').textContent = muted ? '🔇 Son coupé' : '🔊 Son activé'; }
+$('soundBtn').onclick = () => {
+  muted = !muted;
+  try { localStorage.setItem('roulette_muet', muted ? '1' : '0'); } catch (e) {}
+  updateSoundBtn();
+};
+updateSoundBtn();
 function tick() {
-  if (!ac) return;
+  if (muted || !ac) return;
   const o = ac.createOscillator(), g = ac.createGain();
   o.type = 'square'; o.frequency.value = 900; g.gain.setValueAtTime(.05, ac.currentTime);
   g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + .05);
   o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + .06);
 }
 function fanfare() {
-  if (!ac) return;
+  if (muted || !ac) return;
   [523, 659, 784, 1047].forEach((f, i) => {
     const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + i * .11;
     o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.12, t);
