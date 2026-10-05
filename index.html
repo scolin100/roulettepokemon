@@ -714,9 +714,13 @@ function parseSet(s) {
 }
 // liste à plat : jeux + DLC (chaque DLC peut être coché séparément)
 const TRI_ITEMS = [];
+// espèces dont la forme de base n'existe PAS dans le jeu (seule la forme régionale est présente) : le fichier de base est exclu
+const NO_BASE_ALOLA = '19-20,27-28,37-38,50-53,74-76,88-89';
+const NO_BASE = { pla: '58-59,100-101,157,211,215,503,549,570-571,628,705-706,713,724', sm: NO_BASE_ALOLA, usum: NO_BASE_ALOLA };
 TRI_GAMES.forEach(g => {
-  TRI_ITEMS.push({ id: g.id, gen: g.gen, name: g.name, set: parseSet(g.set), forms: g.forms, dlc: false });
-  (g.dlc || []).forEach(d => TRI_ITEMS.push({ id: d.id, gen: g.gen, name: d.name, set: parseSet(d.set), forms: g.forms, dlc: true }));
+  const nb = parseSet(NO_BASE[g.id] || '0');
+  TRI_ITEMS.push({ id: g.id, gen: g.gen, name: g.name, set: parseSet(g.set), forms: g.forms, noBase: nb, dlc: false });
+  (g.dlc || []).forEach(d => TRI_ITEMS.push({ id: d.id, gen: g.gen, name: d.name, set: parseSet(d.set), forms: g.forms, noBase: nb, dlc: true }));
 });
 // lit le numéro et la forme (régionale / fleur éternelle) dans le nom du fichier : "0026 - raichu d'alola.gif"
 function fileInfo(e) {
@@ -741,7 +745,8 @@ function matchGen(e, gens, formGen) {
 function matchItem(e, item) {
   const f = fileInfo(e); if (f.n == null) return false;
   if (!item.set.has(f.n)) return false;
-  return f.form ? item.forms.includes(f.form) : true;
+  if (f.form) return item.forms.includes(f.form);
+  return !(item.noBase && item.noBase.has(f.n));
 }
 const TRI_KEY = 'roulette_tri';
 let tri = { mode: 'none', gens: [], games: [], formGen: 'form' };
