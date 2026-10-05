@@ -717,10 +717,64 @@ const TRI_ITEMS = [];
 // espèces dont la forme de base n'existe PAS dans le jeu (seule la forme régionale est présente) : le fichier de base est exclu
 const NO_BASE_ALOLA = '19-20,27-28,37-38,50-53,74-76,88-89';
 const NO_BASE = { pla: '58-59,100-101,157,211,215,503,549,570-571,628,705-706,713,724', sm: NO_BASE_ALOLA, usum: NO_BASE_ALOLA };
+// chaque paire (Rubis / Saphir, Épée / Bouclier…) est séparée en deux jeux ; les DLC sont proposés pour chacun
+function splitNames(name) {
+  const m = name.match(/^(Let's Go) (.+) \/ (.+)$/);
+  if (m) return [m[1] + ' ' + m[2], m[1] + ' ' + m[3]];
+  return name.split(' / ');
+}
+// Pokémon exclusifs à une version (source : Poképédia) : [exclusifs de la 1re version, exclusifs de la 2e]
+// 'a' = forme d'Alola, 'g' = Galar, 'h' = Hisui, 'p' = Paldea (ex. 37a = Goupix d'Alola)
+const EXCL = {
+  rs:   ['273-275,303,335,338,381,383', '270-272,302,336-337,380,382'],
+  frlg: ['23-24,43-45,54-55,58-59,90-91,110,123,125,182,194-195,198,211,212,225,227,239', '27-28,37-38,69-71,79-80,89,120-121,126-127,183-184,199-200,215,223-224,226,240,298'],
+  dp:   ['86-87,123,198,212,246-248,261-262,304-306,352,408-409,430,434-435,483', '79-80,127,199-200,228-229,234,363-365,371-373,410-411,429,431-432,484'],
+  hgss: ['56-59,138-139,167-168,207,226,231-232,302,343-344,347-348,382,458,472', '37-38,52-53,140-141,165-166,216-217,225,227,303,316-317,345-346,383'],
+  bw:   ['13-15,198,228-229,285-286,311,430,574-576,629-630,641,643', '10-12,46-47,200,261-262,312,429,577-579,627-628,642,644'],
+  b2w2: ['13-15,126,167-168,185,240,311,313,325-326,379,381,427-428,434-435,438,443-445,467,574-576,629-630,644', '10-12,122,125,147-149,165-166,239,300-301,312,314,322-323,378,380,431-432,439,466,577-579,627-628,643'],
+  xy:   ['120-121,127,228-229,261-262,304-306,345-348,539,684-685,692-693,716', '90-91,138-141,214,246-248,309-310,509-510,538,682-683,690-691,717'],
+  oras: ['140-141,250,273-275,303,335,338,383,410-411,484,538,566-567,641,643,690-691', '138-139,249,270-272,302,336-337,382,408-409,483,539,564-565,642,644,692-693'],
+  sm:   ['37a,38a,408-409,546-547,564-565,627-628,766,776,791,794,798', '27a,28a,410-411,548-549,566-567,629-630,765,780,792,795,797'],
+  usum: ['37a,38a,138-139,228-229,243,250,347-348,381,383,408-409,483,485,546-547,564-565,622-623,627-628,641,643,692-693,696-697,716,766,776,791,794,798,806',
+         '27a,28a,140-141,244,249,309-310,343-344,345-346,380,382,410-411,484,486,548-549,566-567,629-630,642,644,690-691,698-699,717,765,780,792,795,797,805'],
+  lgpe: ['27-28,43-45,56-59,88-89,123', '23-24,37-38,52-53,69-71,109-110,127'],
+  swsh: ['83g,273-275,303,338,554g,555g,559-560,574-576,627-628,633-635,684-685,766,776,782-784,841,865,874,888', '77g,78g,222g,246-248,270-272,302,337,453-454,577-579,629-630,682-683,704-706,765,780,842,864,875,889'],
+  swsh_isle:  ['127,692-693', '214,690-691'],
+  swsh_crown: ['138-139,250,371-373,381,383,483,641,643,716,791', '140-141,249,380,382,443-445,484,642,644,717,792'],
+  bdsp: ['10-12,23-24,58-59,86-87,123,125,198,207,212,239,243-248,250,273-275,303,335,338,352,408-409,430,434-435,466,472,483', '13-15,27-28,37-38,79-80,126-127,144-146,199-200,216-217,234,240,249,270-272,302,336-337,371-373,410-411,429,431-432,467,484'],
+  sv:   ['246-248,425-426,434-435,633-635,690-691,765,874,936,984-989,1005,1007,1009', '371-373,200,429,316-317,885-887,692-693,766,875,937,990-995,1006,1008,1010'],
+  sv_teal:   ['207,472,845', '190,424,877'],
+  sv_indigo: ['37a,38a,408-409,1020-1021', '27a,28a,410-411,1022-1023']
+};
+const FORM_CODE = { alola: 'a', galar: 'g', hisui: 'h', paldea: 'p', eternelle: 'e' };
+function parseKeys(s) {
+  const out = new Set();
+  (s || '').split(',').forEach(p => {
+    if (!p) return;
+    const m = p.match(/^(\d+)(?:-(\d+))?([a-z])?$/); if (!m) return;
+    for (let i = +m[1]; i <= +(m[2] || m[1]); i++) out.add(i + (m[3] || ''));
+  });
+  return out;
+}
+function unionSets(a, b) { const o = new Set(a); b.forEach(x => o.add(x)); return o; }
+// chaque paire (Rubis / Saphir, Épée / Bouclier…) est séparée en deux jeux ; les DLC sont proposés pour chacun
+function splitNames(name) {
+  const m = name.match(/^(Let's Go) (.+) \/ (.+)$/);
+  if (m) return [m[1] + ' ' + m[2], m[1] + ' ' + m[3]];
+  return name.split(' / ');
+}
 TRI_GAMES.forEach(g => {
   const nb = parseSet(NO_BASE[g.id] || '0');
-  TRI_ITEMS.push({ id: g.id, gen: g.gen, name: g.name, set: parseSet(g.set), forms: g.forms, noBase: nb, dlc: false });
-  (g.dlc || []).forEach(d => TRI_ITEMS.push({ id: d.id, gen: g.gen, name: d.name, set: parseSet(d.set), forms: g.forms, noBase: nb, dlc: true }));
+  const names = splitNames(g.name), pair = names.length > 1;
+  names.forEach((nm, i) => {
+    const sfx = pair ? '_' + i : '';
+    const exBase = pair && EXCL[g.id] ? parseKeys(EXCL[g.id][1 - i]) : new Set();   // exclusifs de l'autre version : absents ici
+    TRI_ITEMS.push({ id: g.id + sfx, src: g.id, gen: g.gen, name: nm, set: parseSet(g.set), forms: g.forms, noBase: nb, ex: exBase, dlc: false });
+    (g.dlc || []).forEach(d => {
+      const exD = pair && EXCL[d.id] ? unionSets(exBase, parseKeys(EXCL[d.id][1 - i])) : exBase;
+      TRI_ITEMS.push({ id: d.id + sfx, src: d.id, gen: g.gen, name: d.name + (pair ? ' (' + nm + ')' : ''), set: parseSet(d.set), forms: g.forms, noBase: nb, ex: exD, dlc: true });
+    });
+  });
 });
 // lit le numéro et la forme (régionale / fleur éternelle) dans le nom du fichier : "0026 - raichu d'alola.gif"
 function fileInfo(e) {
@@ -745,12 +799,15 @@ function matchGen(e, gens, formGen) {
 function matchItem(e, item) {
   const f = fileInfo(e); if (f.n == null) return false;
   if (!item.set.has(f.n)) return false;
+  if (item.ex && item.ex.has(f.n + (f.form ? FORM_CODE[f.form] : ''))) return false;
   if (f.form) return item.forms.includes(f.form);
   return !(item.noBase && item.noBase.has(f.n));
 }
 const TRI_KEY = 'roulette_tri';
 let tri = { mode: 'none', gens: [], games: [], formGen: 'form' };
 try { const s = JSON.parse(localStorage.getItem(TRI_KEY) || 'null'); if (s && typeof s === 'object') tri = Object.assign(tri, s); } catch (e) {}
+// ancien enregistrement (jeux groupés par paire) : chaque ancien jeu devient ses deux versions
+tri.games = [...new Set((tri.games || []).flatMap(id => TRI_ITEMS.some(it => it.id === id) ? [id] : TRI_ITEMS.filter(it => it.src === id).map(it => it.id)))];
 function saveTri() { try { localStorage.setItem(TRI_KEY, JSON.stringify(tri)); } catch (e) {} }
 function passFilter(e) {
   if (tri.mode === 'gen' && tri.gens.length) return matchGen(e, new Set(tri.gens), tri.formGen);
