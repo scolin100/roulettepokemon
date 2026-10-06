@@ -495,6 +495,10 @@ function finish() {
     // le gagnant devient grand, les autres s'effacent
     const win = strip[winnerIdx];
     if (tiredBy) win.el.querySelector('.label').textContent = tiredBy + ' a tiré ' + win.name.replace(/^\s*\d+\s*-?\s*/, '');
+    if (tiredBy && window.__twitchSay) {            // même message dans le tchat Twitch (option chat=1)
+      const nm = win.name.replace(/^\s*\d+\s*-?\s*/, '').split(' ').map((w, i) => i > 0 && /^(de|du|des|le|la)$/i.test(w) ? w : i > 0 && /^d'/i.test(w) ? "d'" + w.slice(2).replace(/^./, c => c.toUpperCase()) : w.replace(/(^|[-'])([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase())).join(' ');
+      window.__twitchSay(tiredBy + ' a tiré ' + nm);
+    }
     fitLabel(win.el.querySelector('.label'));
     win.el.classList.add('win');
     win.el.style.transform = 'translate(-50%,-50%) translateY(0px) scale(1)';
@@ -1032,6 +1036,7 @@ if (CHILD) {
   });
 }
 function twitchInit(clientId, reward) {
+  const CHAT = OV_P.get('chat') === '1';          // envoie aussi « pseudo a tiré pokémon » dans le tchat Twitch
   const KEY = 'roulette_twitch_token';
   const badge = document.createElement('div');
   badge.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,.75);color:#fff;font:13px system-ui,Arial;cursor:pointer;display:none;max-width:90vw';
@@ -1042,7 +1047,7 @@ function twitchInit(clientId, reward) {
   const login = () => {
     const u = 'https://id.twitch.tv/oauth2/authorize?client_id=' + encodeURIComponent(clientId) +
       '&redirect_uri=' + encodeURIComponent(location.origin + location.pathname) +
-      '&response_type=token&scope=channel:read:redemptions&force_verify=true&state=' + encodeURIComponent(location.search.slice(1));
+      '&response_type=token&scope=' + encodeURIComponent('channel:read:redemptions' + (CHAT ? ' user:write:chat' : '')) + '&force_verify=true&state=' + encodeURIComponent(location.search.slice(1));
     location.href = u;
   };
   const token = store.get();
@@ -1058,6 +1063,17 @@ function twitchInit(clientId, reward) {
       j = await r.json();
     } catch (e) { say('Twitch : réseau indisponible, nouvel essai…'); setTimeout(connect, 8000); return; }
     if (!j.scopes || j.scopes.indexOf('channel:read:redemptions') < 0) { store.set(null); say('Twitch : autorisation manquante, cliquer ici', login); return; }
+    if (CHAT) {
+      if (j.scopes.indexOf('user:write:chat') < 0) say('Twitch : autorisation du tchat manquante, cliquer ici', login);
+      else window.__twitchSay = async text => {
+        try {
+          const r = await fetch('https://api.twitch.tv/helix/chat/messages', { method: 'POST',
+            headers: { Authorization: 'Bearer ' + token, 'Client-Id': clientId, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ broadcaster_id: j.user_id, sender_id: j.user_id, message: text }) });
+          if (!r.ok) { say('Twitch : message non envoyé dans le tchat (' + r.status + ')'); setTimeout(() => say(''), 8000); }
+        } catch (e) { say('Twitch : message non envoyé dans le tchat'); setTimeout(() => say(''), 8000); }
+      };
+    }
     open(j.user_id, 'wss://eventsub.wss.twitch.tv/ws', false);
   }
   function open(uid, url, isReconnect) {
