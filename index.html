@@ -210,8 +210,7 @@
   html.ov, html.ov body, html.ov #area, html.ov #stage { background:transparent; }
   html.ov #panel, html.ov #socialFixed, html.ov .modal, html.ov #sheetBack { display:none !important; }
   html.ov:not(.ovdeco) #bg { display:none; }
-  html.ov #stage { transition:opacity .6s ease, visibility 0s linear 0s; }
-  html.ov #stage.ovhide { opacity:0; visibility:hidden; transition:opacity .6s ease, visibility 0s linear .6s; }
+  html.ov #area.ovhide { transform:translateX(-300%); }   /* masquage : on pousse la zone hors de l'écran (pas d'opacité, qu'OBS gère mal) */
 </style>
 </head>
 <body>
@@ -447,7 +446,7 @@ async function spin() {
   strip = buildStrip(loaded, K + 6); renderStrip();
   old.forEach(u => URL.revokeObjectURL(u));
   winnerIdx = K; offset = 0; render();
-  stage.classList.remove('ovhide');
+  $('area').classList.remove('ovhide');
   targetOffset = K * PITCH + (Math.random() - 0.5) * CARD_H * 0.5;
   startT = performance.now(); lastTick = -1;
   state = 'spinning';
@@ -916,18 +915,18 @@ if (OV) {
   muted = OV_P.get('son') !== '1';
   const th = OV_P.get('theme'); if (th && THEMES[th]) themeChoice = th;
   const cache = OV_P.get('cache') === '1', duree = Math.max(1, +(OV_P.get('duree') || 10)), auto = +(OV_P.get('auto') || 0);
-  if (cache) stage.classList.add('ovhide');
+  if (cache) $('area').classList.add('ovhide');
   let timer = null;
   window.__ovDone = () => {
     clearTimeout(timer);
-    if (cache) setTimeout(() => stage.classList.add('ovhide'), duree * 1000);
+    if (cache) setTimeout(() => $('area').classList.add('ovhide'), duree * 1000);
     if (auto > 0) timer = setTimeout(() => spin(), Math.max(auto, cache ? duree + 1 : 0) * 1000);
   };
   if (!OV_P.get('clientid')) ['click', 'mousedown', 'pointerdown'].forEach(ev => addEventListener(ev, () => { if (state === 'idle' || state === 'done') spin(); }));
   if (OV_P.get('debug') === '1') {   // petit diagnostic en haut à gauche
     const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:6px;top:6px;z-index:99;background:#000c;color:#0f0;font:14px monospace;padding:4px 8px;white-space:pre';
     document.body.appendChild(d);
-    setInterval(() => { d.textContent = 'etat=' + state + ' cache=' + stage.classList.contains('ovhide') + ' images=' + all.length + ' zone=' + $('area').clientWidth + 'x' + $('area').clientHeight + ' ua=' + (navigator.userAgent.match(/Chrome\/[\d.]+/) || ['?'])[0]; }, 300);
+    setInterval(() => { d.textContent = 'etat=' + state + ' cache=' + $('area').classList.contains('ovhide') + ' images=' + all.length + ' zone=' + $('area').clientWidth + 'x' + $('area').clientHeight + ' ua=' + (navigator.userAgent.match(/Chrome\/[\d.]+/) || ['?'])[0]; }, 300);
   }
   if (auto > 0) timer = setTimeout(() => { if (state === 'idle') spin(); }, auto * 1000);
   window.roulette = { tirer: () => spin() };
