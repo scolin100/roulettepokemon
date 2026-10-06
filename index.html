@@ -210,7 +210,7 @@
   html.ov, html.ov body, html.ov #area, html.ov #stage { background:transparent; }
   html.ov #panel, html.ov #socialFixed, html.ov .modal, html.ov #sheetBack { display:none !important; }
   html.ov:not(.ovdeco) #bg { display:none; }
-  html.ov #area.ovhide { transform:translateX(-300%); }   /* masquage : on pousse la zone hors de l'écran (pas d'opacité, qu'OBS gère mal) */
+  html.ov #stage.ovhide { opacity:0; visibility:hidden; }
 </style>
 </head>
 <body>
@@ -446,7 +446,7 @@ async function spin() {
   strip = buildStrip(loaded, K + 6); renderStrip();
   old.forEach(u => URL.revokeObjectURL(u));
   winnerIdx = K; offset = 0; render();
-  $('area').classList.remove('ovhide');
+  if (window.__ovHide) window.__ovHide(false);
   targetOffset = K * PITCH + (Math.random() - 0.5) * CARD_H * 0.5;
   startT = performance.now(); lastTick = -1;
   state = 'spinning';
@@ -915,20 +915,23 @@ if (OV) {
   muted = OV_P.get('son') !== '1';
   const th = OV_P.get('theme'); if (th && THEMES[th]) themeChoice = th;
   const cache = OV_P.get('cache') === '1', duree = Math.max(1, +(OV_P.get('duree') || 10)), auto = +(OV_P.get('auto') || 0);
-  if (cache) $('area').classList.add('ovhide');
+  let hidden = false;
+  const mq = 'opacite';
+  window.__ovHide = (h) => { hidden = h; stage.classList.toggle('ovhide', h); };   // même masquage que la version qui s'affichait dans OBS
+  if (cache) window.__ovHide(true);
   let timer = null;
   window.__ovDone = () => {
     clearTimeout(timer);
-    if (cache) setTimeout(() => $('area').classList.add('ovhide'), duree * 1000);
-    if (auto > 0) timer = setTimeout(() => spin(), Math.max(auto, cache ? duree + 1 : 0) * 1000);
+    if (cache) setTimeout(() => window.__ovHide(true), duree * 1000);
+    if (auto > 0 && OV_P.get('boucle') === '1') timer = setTimeout(() => spin(), Math.max(auto, cache ? duree + 1 : 0) * 1000);   // sans boucle=1 : un seul tirage
   };
   if (!OV_P.get('clientid')) ['click', 'mousedown', 'pointerdown'].forEach(ev => addEventListener(ev, () => { if (state === 'idle' || state === 'done') spin(); }));
   if (OV_P.get('debug') === '1') {   // petit diagnostic en haut à gauche
     const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:6px;top:6px;z-index:99;background:#000c;color:#0f0;font:14px monospace;padding:4px 8px;white-space:pre';
     document.body.appendChild(d);
-    setInterval(() => { d.textContent = 'etat=' + state + ' cache=' + $('area').classList.contains('ovhide') + ' images=' + all.length + ' zone=' + $('area').clientWidth + 'x' + $('area').clientHeight + ' ua=' + (navigator.userAgent.match(/Chrome\/[\d.]+/) || ['?'])[0]; }, 300);
+    setInterval(() => { d.textContent = 'etat=' + state + ' masque=' + mq + ' cache=' + hidden + ' stage=' + JSON.stringify((r => [r.x|0, r.y|0, r.width|0, r.height|0])(stage.getBoundingClientRect())) + ' cartes=' + document.querySelectorAll('#stage img').length + ' images=' + all.length + ' zone=' + $('area').clientWidth + 'x' + $('area').clientHeight + ' ua=' + (navigator.userAgent.match(/Chrome\/[\d.]+/) || ['?'])[0]; }, 300);
   }
-  if (auto > 0) timer = setTimeout(() => { if (state === 'idle') spin(); }, auto * 1000);
+  if (auto > 0 && !OV_P.get('clientid')) timer = setTimeout(() => { if (state === 'idle') spin(); }, auto * 1000);   // avec Twitch : jamais de tirage automatique
   window.roulette = { tirer: () => spin() };
   if (OV_P.get('clientid')) twitchInit(OV_P.get('clientid'), (OV_P.get('recompense') || '').trim().toLowerCase());
 }
