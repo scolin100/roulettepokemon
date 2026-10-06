@@ -1048,19 +1048,36 @@ if (OV) {
   const cache = OV_P.get('cache') === '1', duree = Math.max(1, +(OV_P.get('duree') || 10)), auto = +(OV_P.get('auto') || 0);
   let hidden = false;
   const mq = 'opacite';
-  window.__ovHide = (h) => { hidden = h; stage.classList.toggle('ovhide', h); };   // même masquage que la version qui s'affichait dans OBS
+  let hideT = null;
+  window.__ovHide = (h) => { hidden = h; if (!h) clearTimeout(hideT); stage.classList.toggle('ovhide', h); };   // même masquage que la version qui s'affichait dans OBS ; un nouveau tirage annule toujours le masquage prévu
   if (cache) window.__ovHide(true);
   let timer = null;
+  // File d'attente des récompenses Twitch : un tirage à la fois, avec une pause entre deux (résultat lisible)
+  const queue = []; let nextT = null, lastDone = 0;
+  const gap = duree * 1000 + (cache ? 600 : 0);
+  function next() {
+    clearTimeout(nextT);
+    if (!queue.length) return;
+    if (state !== 'idle' && state !== 'done') { nextT = setTimeout(next, 500); return; }       // une roue tourne encore
+    const wait = lastDone + gap - Date.now();
+    if (wait > 0) { nextT = setTimeout(next, wait); return; }                                   // pause entre deux tirages
+    pendingUser = queue.shift(); spin();
+    if (state === 'idle' || state === 'done') nextT = setTimeout(next, 1000);                  // tirage refusé (liste vide…) : on passe au suivant
+  }
+  window.__ovEnqueue = user => { if (queue.length < 100) queue.push(user); next(); };
   window.__ovDone = () => {
     clearTimeout(timer);
-    if (cache) setTimeout(() => window.__ovHide(true), duree * 1000);
+    lastDone = Date.now();
+    clearTimeout(hideT);
+    if (cache) hideT = setTimeout(() => window.__ovHide(true), duree * 1000);
+    if (queue.length) next();                          // des tirages attendent : on enchaîne après la pause
     if (auto > 0 && OV_P.get('boucle') === '1') timer = setTimeout(() => spin(), Math.max(auto, cache ? duree + 1 : 0) * 1000);   // sans boucle=1 : un seul tirage
   };
   if (!OV_P.get('clientid')) ['click', 'mousedown', 'pointerdown'].forEach(ev => addEventListener(ev, () => { if (state === 'idle' || state === 'done') spin(); }));
   if (OV_P.get('debug') === '1') {   // petit diagnostic en haut à gauche
     const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:6px;top:6px;z-index:99;background:#000c;color:#0f0;font:14px monospace;padding:4px 8px;white-space:pre';
     document.body.appendChild(d);
-    setInterval(() => { d.textContent = 'etat=' + state + ' masque=' + mq + ' cache=' + hidden + ' stage=' + JSON.stringify((r => [r.x|0, r.y|0, r.width|0, r.height|0])(stage.getBoundingClientRect())) + ' cartes=' + document.querySelectorAll('#stage img').length + ' images=' + all.length + ' zone=' + $('area').clientWidth + 'x' + $('area').clientHeight + ' ua=' + (navigator.userAgent.match(/Chrome\/[\d.]+/) || ['?'])[0]; }, 300);
+    setInterval(() => { d.textContent = 'etat=' + state + ' file=' + queue.length + ' masque=' + mq + ' cache=' + hidden + ' stage=' + JSON.stringify((r => [r.x|0, r.y|0, r.width|0, r.height|0])(stage.getBoundingClientRect())) + ' cartes=' + document.querySelectorAll('#stage img').length + ' jeton=' + (window.__tokenDays == null ? '?' : window.__tokenDays + 'j') + ' images=' + all.length + ' zone=' + $('area').clientWidth + 'x' + $('area').clientHeight + ' ua=' + (navigator.userAgent.match(/Chrome\/[\d.]+/) || ['?'])[0]; }, 300);
   }
   if (auto > 0 && !OV_P.get('clientid')) timer = setTimeout(() => { if (state === 'idle') spin(); }, auto * 1000);   // avec Twitch : jamais de tirage automatique
   window.roulette = { tirer: id => spin(id), etat: () => state, son: v => { muted = !v; } };
@@ -1148,6 +1165,16 @@ function twitchInit(clientId, reward) {
       j = await r.json();
     } catch (e) { say('Twitch : réseau indisponible, nouvel essai…'); setTimeout(connect, 8000); return; }
     if (!j.scopes || j.scopes.indexOf('channel:read:redemptions') < 0) { store.set(null); say('Twitch : autorisation manquante, cliquer ici', login); return; }
+    // durée de vie restante du jeton : avertissement quand il reste 7 jours ou moins (alerte=0 pour le désactiver)
+    const secs = +j.expires_in || 0;
+    window.__tokenDays = secs > 0 ? Math.floor(secs / 86400) : null;
+    if (secs > 0 && secs <= 7 * 86400 && OV_P.get('alerte') !== '0') {
+      const d = Math.floor(secs / 86400);
+      const bn = document.createElement('div');
+      bn.textContent = '⚠️ Jeton Twitch : expire ' + (secs < 86400 ? 'dans moins d\'un jour' : d <= 1 ? 'demain' : 'dans ' + d + ' jours') + ' — à renouveler (voir le README)';
+      bn.style.cssText = 'position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:99;padding:10px 18px;border-radius:10px;background:#b00020;color:#fff;font:700 16px system-ui,Arial;max-width:92vw;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.5)';
+      document.body.appendChild(bn); setTimeout(() => bn.remove(), 30000);
+    }
     if (CHAT) {
       if (j.scopes.indexOf('user:write:chat') < 0) { chatMissing = true; say('Twitch : autorisation du tchat manquante, cliquer ici', login); }
       else window.__twitchSay = async text => {
@@ -1178,7 +1205,7 @@ function twitchInit(clientId, reward) {
         arm(20);
         const ev2 = m.payload.event || {}, title = ((ev2.reward && ev2.reward.title) || '').trim().toLowerCase();
         if (m.payload.subscription.type === 'channel.channel_points_custom_reward_redemption.add' && (!reward || title === reward)) {
-          if (state === 'idle' || state === 'done') { pendingUser = ev2.user_name || ev2.user_login || null; spin(); }
+          window.__ovEnqueue(ev2.user_name || ev2.user_login || null);   // file d'attente : aucune récompense n'est perdue
         }
       }
     };
