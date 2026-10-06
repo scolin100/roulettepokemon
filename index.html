@@ -321,6 +321,7 @@ let all = [];        // {name, src} ou {name, file}
 let strip = [];      // {name, src, entry, nw, nh, el}
 let offset = 0, state = 'idle', winnerIdx = -1, startT = 0, targetOffset = 0, lastTick = -1;
 let objectUrls = [];
+let pendingUser = null, tiredBy = null;   // pseudo Twitch de la personne qui a utilisé la récompense (affiché avec le résultat)
 
 // ---- mémoire des images retirées (conservée entre les rechargements) ----
 const MEM_KEY = 'roulette_images_retirees';
@@ -453,6 +454,7 @@ async function spin(forceId) {
   if (TRIPLE) return tripleSpin();
   if (state === 'spinning' || state === 'loading' || !all.length) return;
   initAudio();
+  tiredBy = pendingUser; pendingUser = null;
   state = 'loading'; spinBtn.disabled = true;
   const old = objectUrls; objectUrls = [];
   let loaded = await loadRandom(Math.min(LOAD_COUNT, all.length));
@@ -492,6 +494,7 @@ function finish() {
     if (k < 1) { requestAnimationFrame(snap); return; }
     // le gagnant devient grand, les autres s'effacent
     const win = strip[winnerIdx];
+    if (tiredBy) win.el.querySelector('.label').textContent = tiredBy + ' a tiré ' + win.name.replace(/^\s*\d+\s*-?\s*/, '');
     fitLabel(win.el.querySelector('.label'));
     win.el.classList.add('win');
     win.el.style.transform = 'translate(-50%,-50%) translateY(0px) scale(1)';
@@ -1074,7 +1077,7 @@ function twitchInit(clientId, reward) {
         arm(20);
         const ev2 = m.payload.event || {}, title = ((ev2.reward && ev2.reward.title) || '').trim().toLowerCase();
         if (m.payload.subscription.type === 'channel.channel_points_custom_reward_redemption.add' && (!reward || title === reward)) {
-          if (state === 'idle' || state === 'done') spin();
+          if (state === 'idle' || state === 'done') { pendingUser = ev2.user_name || ev2.user_login || null; spin(); }
         }
       }
     };
