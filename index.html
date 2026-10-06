@@ -119,6 +119,16 @@
   #nbSel { display:flex; gap:4px; }
   #nbSel button { flex:1; padding:8px 0; }
   #nbSel button.on { background:var(--orange); color:#111; border-color:var(--orange); font-weight:700; }
+  #calNote { font-size:13px; opacity:.8; }
+  #calList { flex:1; overflow:auto; display:flex; flex-direction:column; gap:8px; }
+  .calev { background:#1a1f2c; border:1px solid #2a3042; border-radius:10px; padding:10px 12px; }
+  .calev.on { border-color:#ffd84a; box-shadow:0 0 0 1px #ffd84a inset; }
+  .calev .ch { display:flex; justify-content:space-between; gap:10px; align-items:baseline; flex-wrap:wrap; }
+  .calev .cn { font-weight:700; font-size:15px; }
+  .calev .cd { font-size:13px; color:#ffd84a; }
+  .calev .cs { font-size:12px; opacity:.7; margin:2px 0 6px; }
+  .calev .cl { display:flex; flex-wrap:wrap; gap:4px; }
+  .calev .cl span { background:#12151d; border:1px solid #2a3042; border-radius:6px; padding:2px 7px; font-size:12px; }
   .htabs { display:flex; gap:6px; margin-bottom:8px; }
   .htabs button { flex:1; padding:8px 10px; border-radius:8px; border:1px solid #2a3042; background:transparent; color:inherit; cursor:pointer; font:inherit; }
   .htabs button.on { background:#2a3042; border-color:#ffd84a; }
@@ -218,6 +228,8 @@
     --vig:rgba(0,0,0,.7); --card:rgba(20,16,4,.66); --card2:rgba(20,16,4,.46); --ray:rgba(237,41,57,.16); }
   html[data-theme="nouvelan"] { --blue:#0d1433; --orange:#FFD34D; --acc-rgb:255,211,77; --glow:rgba(255,211,77,.34); --glow-l:rgba(255,211,77,.26);
     --vig:rgba(0,0,20,.7); --card:rgba(6,8,30,.64); --card2:rgba(6,8,30,.44); --ray:rgba(255,211,77,.13); }
+  html[data-theme="chinois"] { --blue:#a30f1f; --orange:#FFD34D; --acc-rgb:255,211,77; --glow:rgba(255,200,80,.42); --glow-l:rgba(255,200,80,.3);
+    --vig:rgba(60,0,6,.68); --card:rgba(58,4,10,.64); --card2:rgba(58,4,10,.44); --ray:rgba(255,211,77,.14); }
   html[data-theme="paques"] { --blue:#5fa83a; --orange:#FFE45C; --acc-rgb:255,228,92; --glow:rgba(230,255,170,.5); --glow-l:rgba(230,255,170,.36);
     --vig:rgba(10,50,10,.6); --card:rgba(12,52,14,.6); --card2:rgba(12,52,14,.4); --ray:rgba(255,255,255,.14); }
   html[data-theme="suisse"] { --blue:#c8102e; --orange:#ffffff; --acc-rgb:255,255,255; --glow:rgba(255,190,190,.5); --glow-l:rgba(255,190,190,.36);
@@ -308,6 +320,7 @@
   <div class="nbsel"><span>🎰 Nombre de tirages</span><div id="nbSel"><button data-n="1">1</button><button data-n="3">3</button><button data-n="6">6</button></div></div>
   <button id="histBtn">📜 Historique des tirages</button>
   <button id="dexBtn">📖 Pokédex</button>
+  <button id="calBtn">📅 Calendrier des shinys</button>
   <button id="manageMem">🗂 Gérer la mémoire</button>
   <button id="resetMem">↺ Réinitialiser la mémoire</button>
   <div class="social">
@@ -358,6 +371,14 @@
       <span style="display:flex;gap:8px;align-items:center"><button id="dexPrev">◀</button><span id="dexPage"></span><button id="dexNext">▶</button></span>
       <button id="dexReset">Réinitialiser le Pokédex</button>
     </div>
+  </div>
+</div>
+
+<div id="cal" class="modal hidden">
+  <div class="box" style="width:min(760px,96vw)">
+    <div class="mhead"><strong>📅 Calendrier des shinys boostés</strong><button id="calClose">✕</button></div>
+    <div id="calNote"></div>
+    <div id="calList"></div>
   </div>
 </div>
 
@@ -497,7 +518,38 @@ async function loadShiny(entry) {
   }
   return null;
 }
-const rollShiny = () => SHINY_ODDS > 0 && Math.random() < 1 / SHINY_ODDS;
+// Périodes à shiny boosté (mêmes dates que les thèmes) : les pokémons de saison passent à 1 chance sur 512
+const BOOST_ODDS = 512;
+const inSet = set => (n, form) => set.has(form ? n + ':' + form : n);          // un numéro seul = forme de base uniquement ; « n:forme » = forme régionale précise
+const inRange = (lo, hi, form) => (n, f) => (n >= lo && n <= hi) || (!!form && f === form);   // plage de numéros + toutes les formes régionales indiquées
+const onDay = (month, day) => now => now.getMonth() === month && now.getDate() === day;
+const dayR = (m, d) => y => [new Date(y, m, d), new Date(y, m, d, 23, 59, 59, 999)];                  // un seul jour
+const winR = (m, d) => y => [new Date(y, m, d - 7), new Date(y, m, d + 2, 23, 59, 59, 999)];           // même fenêtre que les thèmes (inWindow)
+const easterR = y => { const e = easterSunday(y); return [new Date(y, e.getMonth(), e.getDate() - 3), new Date(y, e.getMonth(), e.getDate() + 1, 23, 59, 59, 999)]; };
+const NEWYEAR_R = y => [new Date(y, 11, 30), new Date(y + 1, 0, 5, 23, 59, 59, 999)];                 // 30 déc → 5 janv
+const BOOST_EVENTS = [
+  { name: 'Nouvel An 🎆', range: NEWYEAR_R, match: inSet(new Set([25, 163, 197, 79, 80, 199, 1, 4, 7, 20, 33, 94, 202, 39, 265, 554, 129])), list: true },
+  { name: 'Nouvel An chinois 🧧', range: cnyR, match: inSet(new Set([19, 572, 183, 128, 241, 626, 56, 727, 243, 427, 659, 814, 147, 148, 130, 23, 95, 495, 77, 78, 522, 179, 181, 672, 390, 190, 391, 255, 256, 257, 261, 58, 835, 325, 498, 326])), list: true, desc: 'Les 12 animaux du zodiaque chinois' },
+  { name: 'Pokémon Day', range: dayR(1, 27), match: () => true, desc: 'Tous les pokémons' },
+  { name: 'Kanto · Johto · Hoenn · Sinnoh · Hisui', range: dayR(1, 23), match: (n, f) => n <= 493 || (n >= 899 && n <= 905) || f === 'hisui', desc: "Pokémons n°1 à 493 et n°899 à 905, plus toutes les formes d'Hisui" },
+  { name: 'Galar', range: dayR(3, 23), match: inRange(810, 898, 'galar'), desc: 'Pokémons n°810 à 898, plus toutes les formes de Galar' },
+  { name: 'Pâques 🥚', range: easterR, match: inSet(new Set([102, 103, 113, 175, 183, 184, 225, 242, 255, 427, 428, 440, 659, 660, 722, '100:hisui'])), list: true },
+  { name: 'Unys · Alola', range: dayR(6, 4), match: (n, f) => inRange(494, 649)(n, f) || inRange(722, 807, 'alola')(n, f), desc: "Pokémons n°494 à 649 et n°722 à 807, plus toutes les formes d'Alola" },
+  { name: 'Kalos', range: dayR(6, 14), match: inRange(650, 721), desc: 'Pokémons n°650 à 721' },
+  { name: 'Paldea', range: dayR(9, 12), match: inRange(906, 1025, 'paldea'), desc: 'Pokémons n°906 à 1025, plus toutes les formes de Paldea' },
+  { name: 'Halloween 🎃', range: winR(9, 31), match: inSet(new Set([92, 93, 94, 200, 302, 354, 429, 607, 608, 609, 708, 709, 710, 711, 778, 855, 971, 972])), list: true },
+  { name: 'Noël 🎄', range: winR(11, 25), match: inSet(new Set([124, 225, 234, 459, 460, 478, 547, 582, 583, 584, 608, 613, 614, 615, 765, 820, 858, 872])), list: true },
+];
+BOOST_EVENTS.forEach(ev => { ev.when = now => rangeHas(ev.range, now); });
+function shinyOdds(entry) {
+  if (SHINY_ODDS <= 0) return 0;
+  if (entry) {
+    const f = fileInfo(entry), now = new Date();
+    if (f.n != null && BOOST_EVENTS.some(ev => ev.when(now) && ev.match(f.n, f.form))) return Math.min(SHINY_ODDS, BOOST_ODDS);
+  }
+  return SHINY_ODDS;
+}
+const rollShiny = entry => { const o = shinyOdds(entry); return o > 0 && Math.random() < 1 / o; };
 function rnd(n) { return Math.floor(Math.random() * n); }
 function buildStrip(loaded, len) {
   // Une même image ne peut pas réapparaître avant au moins `gap` cartes : plus de doublons visibles en même temps.
@@ -571,7 +623,7 @@ async function spin(forceId) {
   const K = 48 + rnd(10);
   strip = buildStrip(loaded, K + 6);
   if (forced) strip[K] = Object.assign({}, forced);
-  if (rollShiny() || window.__forceShiny) {                // 1 chance sur 2048 : le gagnant est la version shiny (si le fichier existe)
+  if (rollShiny(strip[K].entry) || window.__forceShiny) {                // 1 chance sur 2048 : le gagnant est la version shiny (si le fichier existe)
     const sh = await loadShiny(strip[K].entry);
     if (sh) strip[K] = sh;
   }
@@ -813,7 +865,7 @@ function recordDex(id, shiny, src) {
   if (!$('dex').classList.contains('hidden')) renderDex();
 }
 let dexPage = 0;
-const dexPretty = n => n.replace(/^\s*\d+\s*-?\s*/, '').replace(/(^|[\s'-])([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase());
+const dexPretty = n => n.replace(/^\s*\d+\s*-?\s*/, '').replace(/(^|[\s'-])([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase()).replace(/ D'/g, " d'").replace(/ (De|Du|Des|Le|La) /g, m => m.toLowerCase());
 function dexImg(e) { if (e.file) { const u = URL.createObjectURL(e.file); objectUrls.push(u); return u; } return e.src; }
 function renderDex() {
   const shiny = $('dexShiny').checked, grid = $('dexGrid'); grid.innerHTML = '';
@@ -856,6 +908,41 @@ $('dexReset').onclick = () => {
   if (!confirm("Es-tu sûr de vouloir réinitialiser le Pokédex ?\n\nTous les pokémons obtenus, y compris les shinys, seront effacés. Cette action est définitive.")) return;
   dex = {}; saveDex(); dexPage = 0; renderDex();
 };
+// ---- calendrier des shinys boostés ----
+const fmtDay = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+function renderCal() {
+  const now = new Date(), y = now.getFullYear();
+  const odds = Math.min(SHINY_ODDS || BOOST_ODDS, BOOST_ODDS);
+  $('calNote').textContent = SHINY_ODDS > 0 ? "Les jours indiqués, les pokémons concernés passent à 1 chance sur " + odds + " d'être shiny (au lieu de 1 sur " + SHINY_ODDS + ")." : "Les shinys sont désactivés.";
+  const list = $('calList'); list.innerHTML = '';
+  const evs = BOOST_EVENTS.map(ev => { const r = [y - 1, y, y + 1].map(yy => ev.range(yy)).find(rr => rr[1] >= now); return { ev, r, on: ev.when(now) }; })
+    .sort((a, b) => (b.on - a.on) || (a.r[0] - b.r[0]));        // en cours d'abord, puis prochains par date
+  evs.forEach(({ ev, r, on }) => {
+    const box = document.createElement('div'); box.className = 'calev' + (on ? ' on' : '');
+    const head = document.createElement('div'); head.className = 'ch';
+    const nm = document.createElement('span'); nm.className = 'cn'; nm.textContent = ev.name;
+    const dt = document.createElement('span'); dt.className = 'cd';
+    const same = r[0].toDateString() === r[1].toDateString();
+    dt.textContent = (on ? '● En cours · ' : '') + (same ? 'le ' + fmtDay(r[0]) : 'du ' + fmtDay(r[0]) + ' au ' + fmtDay(r[1])) + (r[0].getFullYear() !== y ? ' ' + r[0].getFullYear() : '');
+    head.appendChild(nm); head.appendChild(dt); box.appendChild(head);
+    const seen = new Set(), names = [];
+    fullList.forEach(e => { const f = fileInfo(e); if (f.n == null || !ev.match(f.n, f.form)) return; const k = f.n + ':' + (f.form || ''); if (seen.has(k)) return; seen.add(k); names.push(e); });
+    const sub = document.createElement('div'); sub.className = 'cs';
+    sub.textContent = (ev.desc ? ev.desc + ' · ' : '') + (fullList.length ? names.length + ' pokémons' : '');
+    box.appendChild(sub);
+    if (ev.list) {
+      const cl = document.createElement('div'); cl.className = 'cl';
+      names.forEach(e => { const sp = document.createElement('span'); sp.textContent = dexPretty(e.name); cl.appendChild(sp); });
+      box.appendChild(cl);
+    }
+    list.appendChild(box);
+  });
+}
+function openCal() { closeSheet(); $('cal').classList.remove('hidden'); renderCal(); }
+function closeCal() { $('cal').classList.add('hidden'); }
+$('calBtn').onclick = openCal;
+$('calClose').onclick = closeCal;
+$('cal').addEventListener('mousedown', e => { if (e.target === $('cal')) closeCal(); });
 function addHistory(win) {
   if (win.entry) recordDex(win.entry.id, SHINY_RE.test(win.name), win.shiny ? win.src : null);
   const rec = { n: win.name, t: Date.now() };
@@ -920,6 +1007,7 @@ spinBtn.onclick = () => { closeSheet(); spin(); };
 addEventListener('keydown', e => {
   if (!$('mem').classList.contains('hidden')) { if (e.key === 'Escape') closeMem(); return; }  // fenêtre mémoire ouverte
   if (!$('tri').classList.contains('hidden')) { if (e.key === 'Escape') closeTri(); return; }
+  if (!$('cal').classList.contains('hidden')) { if (e.key === 'Escape') closeCal(); return; }
   if (!$('dex').classList.contains('hidden')) { if (e.key === 'Escape') closeDex(); return; }
   if (!$('hist').classList.contains('hidden')) { if (e.key === 'Escape') closeHist(); return; } // fenêtre historique ouverte
   if (e.code === 'Space') { e.preventDefault(); if (!spinBtn.disabled) spin(); }
@@ -1068,6 +1156,7 @@ const THEMES = {
   canada:    { name: 'Fête du Canada 🇨🇦', conf: ['#ffffff', '#FF3B3B', '#ffffff', '#ff8a8a', '#ffffff', '#FF3B3B'], emo: ['🍁', '🍁', '🇨🇦', '🍁', '🎆', '🍁'], fall: true },
   belgique:  { name: 'Fête nationale belge 🇧🇪', conf: ['#FAD201', '#ED2939', '#ffffff', '#FAD201', '#ED2939', '#ffffff'], emo: ['🇧🇪', '🎆', '🍟', '🧇', '🎇', '✨'], fall: false },
   nouvelan:  { name: 'Nouvel An 🎆', conf: ['#FFD34D', '#ffffff', '#c9d3ff', '#FFD34D', '#ffffff', '#ffb347'], emo: ['🎆', '🎇', '🥂', '✨', '🍾', '🎉'], fall: false },
+  chinois:   { name: 'Nouvel An chinois 🧧', conf: ['#FFD34D', '#ffffff', '#ff4d4d', '#ffb347', '#FFD34D', '#ff8a5c'], emo: ['🧧', '🏮', '🐉', '🎆', '🧨', '🪭'], fall: false },
   paques:    { name: 'Pâques 🐰', conf: ['#FFE45C', '#ffffff', '#ffb3d1', '#b8f0a0', '#c8b6ff', '#ffd1a0'], emo: ['🥚', '🐰', '🐣', '🌷', '🐥', '🌸'], fall: false },
   suisse:    { name: 'Fête nationale suisse 🇨🇭', conf: ['#ffffff', '#FF3B3B', '#ffffff', '#ffb3b3', '#ffffff', '#FF3B3B'], emo: ['🇨🇭', '🧀', '⛰️', '🍫', '🎆', '🎇'], fall: false },
   quebec:    { name: 'Fête nationale du Québec ⚜️', conf: ['#ffffff', '#7fb0ff', '#ffffff', '#4d7bff', '#ffffff', '#c9dcff'], emo: ['⚜️', '⚜️', '🎆', '🍁', '⚜️', '🎇'], fall: false },
@@ -1104,7 +1193,7 @@ const GAME_DATES = {
   epeebouclier: [[10, 15], [5, 17], [9, 23]],   // 15 nov, 17 juin, 23 oct
   ecarlateviolet: [[10, 18], [11, 14]],   // 18 nov, 14 déc
 };
-const SPECIAL = ['emeraude', 'orargent', 'rubissaphir', 'noirblanc', 'diamantperle', 'platine', 'xy', 'soleillune', 'epeebouclier', 'ecarlateviolet', 'valentin', 'muguet', 'musique', 'national', 'canada', 'belgique', 'suisse', 'quebec', 'nouvelan', 'paques', 'diamant', 'halloween', 'noel'];
+const SPECIAL = ['emeraude', 'orargent', 'rubissaphir', 'noirblanc', 'diamantperle', 'platine', 'xy', 'soleillune', 'epeebouclier', 'ecarlateviolet', 'valentin', 'muguet', 'musique', 'national', 'canada', 'belgique', 'suisse', 'quebec', 'nouvelan', 'chinois', 'paques', 'diamant', 'halloween', 'noel'];
 if (themeChoice !== 'auto' && (!THEMES[themeChoice] || (!TEST && SPECIAL.includes(themeChoice) && autoTheme() !== themeChoice))) themeChoice = 'auto';
 // Thème automatique : actif 7 jours avant la date et jusqu'à 2 jours après (inclus)
 function inWindow(month, day, now) {
@@ -1125,6 +1214,25 @@ function easterSunday(y) {
         mo = Math.floor((h + l - 7 * m + 114) / 31), da = ((h + l - 7 * m + 114) % 31) + 1;
   return new Date(y, mo - 1, da);
 }
+// Nouvel An chinois : table des dates officielles 2024-2040, puis calendrier chinois du navigateur
+const CNY_TABLE = { 2024: [1, 10], 2025: [0, 29], 2026: [1, 17], 2027: [1, 6], 2028: [0, 26], 2029: [1, 13], 2030: [1, 3], 2031: [0, 23], 2032: [1, 11], 2033: [0, 31], 2034: [1, 19], 2035: [1, 8], 2036: [0, 28], 2037: [1, 15], 2038: [1, 4], 2039: [0, 24], 2040: [1, 12] };
+const _cnyCache = {};
+function chineseNewYear(y) {
+  if (_cnyCache[y]) return _cnyCache[y];
+  let res = CNY_TABLE[y] ? new Date(y, CNY_TABLE[y][0], CNY_TABLE[y][1]) : null;     // table prioritaire (dates officielles) ; calendrier du navigateur au-delà de 2040
+  if (!res) try {
+    const f = new Intl.DateTimeFormat('en-u-ca-chinese', { timeZone: 'UTC', month: 'numeric', day: 'numeric' });
+    for (let t = Date.UTC(y, 0, 19); t <= Date.UTC(y, 1, 24) && !res; t += 864e5) {
+      const d = new Date(t + 12 * 36e5), p = f.formatToParts(d);
+      const mo = (p.find(x => x.type === 'month') || {}).value, da = (p.find(x => x.type === 'day') || {}).value;
+      if (mo === '1' && da === '1') res = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    }
+  } catch (e) {}
+  return (_cnyCache[y] = res);
+}
+// période : de la veille (réveillon) au 7e jour
+function cnyR(y) { const c = chineseNewYear(y); if (!c) return [new Date(y, 0, 1), new Date(y, 0, 1)]; return [new Date(y, c.getMonth(), c.getDate() - 1), new Date(y, c.getMonth(), c.getDate() + 6, 23, 59, 59, 999)]; }
+function rangeHas(fn, now) { const y = now.getFullYear(); return [y - 1, y].some(yy => { const r = fn(yy); return now >= r[0] && now <= r[1]; }); }
 function inEaster(now) {
   const e = easterSunday(now.getFullYear());
   return now >= new Date(e.getFullYear(), e.getMonth(), e.getDate() - 3) && now <= new Date(e.getFullYear(), e.getMonth(), e.getDate() + 1, 23, 59, 59, 999);
@@ -1136,6 +1244,7 @@ function autoTheme(now) {
   if ((now.getMonth() === 11 && now.getDate() >= 30) || (now.getMonth() === 0 && now.getDate() <= 5)) return 'nouvelan';   // 30 déc → 5 janv
   if (inEaster(now)) return 'paques';              // jeudi avant Pâques → lundi de Pâques
   if (sameDay(1, 14, now)) return 'valentin';      // Saint-Valentin : 14 fév uniquement
+  if (rangeHas(cnyR, now)) return 'chinois';      // Nouvel An chinois : veille → 7e jour (la Saint-Valentin garde la priorité le 14 fév)
   if (sameDay(4, 1, now)) return 'muguet';         // 1er mai uniquement
   if (sameDay(5, 21, now)) return 'musique';
   if (sameDay(5, 24, now)) return 'quebec';        // 24 juin uniquement       // 21 juin uniquement
