@@ -285,7 +285,7 @@
   <div class="themeRow"><label for="themeSel">🎨 Thème</label>
     <select id="themeSel"><option value="auto">Auto</option><option value="default">Bleu</option><option value="rouge">Rouge</option><option value="vert">Vert</option><option value="violet">Violet</option><option value="jaune">Jaune</option><option value="rose">Rose</option><option value="turquoise">Turquoise</option><option value="shiny">Shiny ✨</option><option value="halloween">Halloween 🎃</option><option value="noel">Noël 🎄</option></select></div>
   <button id="soundBtn">🔊 Son activé</button>
-  <button id="triBtn">🔎 Trier par génération</button>
+  <button id="triBtn">🔎 Trier les pokémons</button>
   <button id="tripleBtn" onclick="location.href=location.pathname+'?triple'">🎰 3 tirages simultanés</button>
   <button id="sixBtn" onclick="location.href=location.pathname+'?six'">🎰 6 tirages simultanés</button>
   <button id="histBtn">📜 Historique des tirages</button>
@@ -329,7 +329,8 @@
 
 <div id="tri" class="modal hidden">
   <div class="box">
-    <div class="mhead"><strong>Tri des pokémons</strong><button id="triClose">✕</button></div>
+    <div class="mhead"><strong>Trier les pokémons</strong><button id="triClose">✕</button></div>
+    <div class="htabs"><button id="triTabGen" class="on">Par génération</button><button id="triTabFmt">Par format</button></div>
     <div id="triBody"></div>
     <div class="mfoot"><span style="display:flex;gap:8px"><button id="triAll">Tout cocher</button><button id="triClear">Tout décocher</button></span><span id="triNote"></span></div>
   </div>
@@ -860,15 +861,29 @@ if (tri.mode !== undefined && tri.mode !== 'gen') tri.gens = [];             // 
 delete tri.mode; delete tri.games;
 function saveTri() { try { localStorage.setItem(TRI_KEY, JSON.stringify(tri)); } catch (e) {} }
 // ---- Pokémon Champions : règlement M-C (liste officielle des pokémons autorisés, sans les Méga-évolutions) ----
-const CHAMP_BASE = new Set([3, 6, 9, 15, 18, 24, 25, 26, 36, 38, 40, 45, 53, 59, 65, 68, 71, 80, 83, 94, 115, 121, 122, 127, 128, 130, 132, 134, 135, 136, 142, 143, 149, 154, 157, 160, 168, 181, 184, 186, 196, 197, 199, 205, 208, 211, 212, 214, 227, 229, 248, 254, 257, 260, 279, 282, 302, 303, 306, 308, 310, 317, 319, 323, 324, 334, 350, 351, 354, 358, 359, 362, 373, 376, 389, 392, 395, 398, 405, 407, 409, 411, 428, 442, 445, 448, 450, 454, 460, 461, 464, 470, 471, 472, 473, 475, 478, 479, 497, 500, 503, 505, 510, 512, 514, 516, 518, 530, 531, 534, 545, 547, 553, 560, 563, 569, 571, 579, 584, 587, 604, 609, 614, 618, 623, 635, 637, 652, 655, 658, 660, 663, 666, 668, 671, 673, 675, 676, 678, 681, 683, 685, 687, 689, 691, 693, 695, 697, 699, 700, 701, 702, 706, 707, 709, 711, 713, 715, 724, 727, 730, 733, 740, 745, 748, 750, 752, 758, 763, 765, 766, 768, 778, 780, 784, 812, 815, 818, 823, 828, 841, 842, 844, 849, 853, 855, 858, 861, 863, 865, 866, 867, 869, 870, 871, 876, 877, 887, 899, 900, 902, 903, 904, 908, 911, 914, 923, 925, 930, 931, 934, 936, 937, 939, 943, 952, 956, 959, 964, 968, 970, 972, 979, 981, 983, 998, 1000, 1013, 1018, 1019]);
+const CHAMP_BASE = new Set([3, 6, 9, 15, 18, 24, 25, 26, 36, 38, 40, 45, 53, 59, 65, 68, 71, 80, 83, 94, 115, 121, 122, 127, 128, 130, 132, 134, 135, 136, 142, 143, 149, 154, 157, 160, 168, 181, 184, 186, 196, 197, 199, 205, 208, 211, 212, 214, 227, 229, 248, 254, 257, 260, 279, 282, 302, 303, 306, 308, 310, 317, 319, 323, 324, 334, 350, 351, 354, 358, 359, 362, 373, 376, 389, 392, 395, 398, 405, 407, 409, 411, 428, 442, 445, 448, 450, 454, 460, 461, 464, 470, 471, 472, 473, 475, 478, 479, 497, 500, 503, 505, 510, 512, 514, 516, 518, 530, 531, 534, 545, 547, 553, 560, 563, 569, 571, 579, 584, 587, 604, 609, 614, 618, 623, 635, 637, 652, 655, 658, 660, 663, 666, 668, 671, 673, 675, 676, 678, 681, 683, 685, 687, 689, 691, 693, 695, 697, 699, 700, 701, 702, 706, 707, 709, 711, 713, 715, 724, 727, 730, 733, 740, 745, 748, 750, 752, 758, 763, 765, 766, 768, 778, 780, 784, 812, 815, 818, 823, 841, 842, 844, 849, 853, 855, 858, 861, 863, 865, 866, 867, 869, 870, 871, 876, 877, 887, 899, 900, 902, 903, 904, 908, 911, 914, 923, 925, 930, 931, 934, 936, 937, 939, 943, 952, 956, 959, 964, 968, 970, 972, 979, 981, 983, 998, 1000, 1013, 1018, 1019]);   // M-C = M-B + 22 pokémons
 const CHAMP_FORMS = new Set(["128:paldea", "157:hisui", "199:galar", "26:alola", "38:alola", "503:hisui", "53:alola", "571:hisui", "59:hisui", "618:galar", "706:hisui", "713:hisui", "724:hisui", "80:galar", "670:eternelle"]);   // formes régionales / Floette Éternelle autorisées (numéro:forme)
+// ---- règlement M-A : le tout premier format de Pokémon Champions ----
+const CHAMP_A_BASE = new Set([3, 6, 9, 15, 18, 24, 25, 26, 36, 38, 59, 65, 68, 71, 80, 94, 115, 121, 127, 128, 130, 132, 134, 135, 136, 142, 143, 149, 154, 157, 160, 168, 181, 184, 186, 196, 197, 199, 205, 208, 212, 214, 227, 229, 248, 279, 282, 302, 306, 308, 310, 319, 323, 324, 334, 350, 351, 354, 358, 359, 362, 389, 392, 395, 405, 407, 409, 411, 428, 442, 445, 448, 450, 454, 460, 461, 464, 470, 471, 472, 473, 475, 478, 479, 497, 500, 503, 505, 510, 512, 514, 516, 530, 531, 534, 547, 553, 563, 569, 571, 579, 584, 587, 609, 614, 618, 623, 635, 637, 652, 655, 658, 660, 663, 666, 671, 675, 676, 678, 681, 683, 685, 693, 695, 697, 699, 700, 701, 702, 706, 707, 709, 711, 713, 715, 724, 727, 730, 733, 740, 745, 748, 750, 752, 758, 763, 765, 766, 778, 780, 784, 823, 841, 842, 844, 855, 858, 866, 867, 869, 877, 887, 899, 900, 902, 903, 908, 911, 914, 925, 934, 936, 937, 939, 952, 956, 959, 964, 968, 970, 981, 983, 1013, 1018, 1019]);
+const CHAMP_A_FORMS = new Set(['26:alola', '38:alola', '59:hisui', '80:galar', '128:paldea', '157:hisui', '199:galar', '503:hisui', '571:hisui', '618:galar', '706:hisui', '713:hisui', '724:hisui', '670:eternelle']);
+// ---- règlement M-B : M-A + 22 pokémons ----
+const CHAMP_B_EXTRA = new Set([45, 211, 254, 257, 260, 303, 376, 398, 518, 545, 560, 604, 668, 687, 689, 691, 861, 870, 904, 972, 979, 1000]);
+function champBOk(e) {
+  if (champAOk(e)) return true;
+  const f = fileInfo(e); return f.n != null && !f.form && CHAMP_B_EXTRA.has(f.n);
+}
+function champAOk(e) {
+  const f = fileInfo(e); if (f.n == null) return false;
+  if (f.form) return CHAMP_A_FORMS.has(f.n + ':' + f.form);
+  return CHAMP_A_BASE.has(f.n);
+}
 function champOk(e) {
   const f = fileInfo(e); if (f.n == null) return false;
   if (f.form) return CHAMP_FORMS.has(f.n + ':' + f.form);              // forme régionale : seulement celles de la liste
   return CHAMP_BASE.has(f.n);
 }
 function passFilter(e) {
-  if (tri.champ && !champOk(e)) return false;
+  if ((tri.champ || tri.champA || tri.champB) && !((tri.champ && champOk(e)) || (tri.champA && champAOk(e)) || (tri.champB && champBOk(e)))) return false;   // M-C et M-A cochés ensemble = l'un ou l'autre
   if (tri.gens.length) return matchGen(e, new Set(tri.gens), tri.formGen);
   return true;
 }
@@ -876,6 +891,8 @@ function visible(e) { return !removed.has(e.id) && passFilter(e); }
 function triLabel() {
   const p = [];
   if (tri.champ) p.push('Champions M-C');
+  if (tri.champA) p.push('Champions M-A');
+  if (tri.champB) p.push('Champions M-B');
   if (tri.gens.length) p.push(tri.gens.slice().sort((a, b) => a - b).map(g => g + 'G').join(', '));
   return p.length ? ' — tri : ' + p.join(' + ') : '';
 }
@@ -892,14 +909,22 @@ function chk(label, checked, count, onChange, sub) {
 }
 function setTri(patch) { Object.assign(tri, patch); saveTri(); if (fullList.length) refreshAfterMem(); renderTri(true); }
 function toggleIn(arr, v, on) { const s = new Set(arr); if (on) s.add(v); else s.delete(v); return [...s]; }
+let triTab = 'gen';
+$('triTabGen').onclick = () => { triTab = 'gen'; renderTri(); };
+$('triTabFmt').onclick = () => { triTab = 'fmt'; renderTri(); };
 function renderTri(keepScroll) {
   const body = $('triBody'), top = body.scrollTop;
   body.innerHTML = '';
-  {
-    const ch = chk('⚔️ Pokémon Champions · règlement M-C (sans les Méga)', !!tri.champ,
-      fullList.length ? triCount(e => champOk(e)) : null, on => setTri({ champ: on }));
-    ch.style.borderBottom = '2px solid #2a3042'; ch.style.marginBottom = '6px';
-    body.appendChild(ch);
+  $('triTabGen').classList.toggle('on', triTab === 'gen'); $('triTabFmt').classList.toggle('on', triTab === 'fmt');
+  $('triAll').style.display = $('triClear').style.display = triTab === 'gen' ? '' : 'none';
+  if (triTab === 'fmt') {
+    const fmts = [['M-A', 'champA', champAOk], ['M-B', 'champB', champBOk], ['M-C', 'champ', champOk]];
+    fmts.forEach(([n, k, fn]) => body.appendChild(chk('⚔️ Pokémon Champions · règlement ' + n, !!tri[k],
+      fullList.length ? triCount(e => fn(e)) : null, on => setTri({ [k]: on }))));
+    const note = document.createElement('div'); note.className = 'formopt';
+    note.textContent = "D'autres formats pourront être ajoutés ici.";
+    body.appendChild(note);
+  } else {
     const sel = new Set(tri.gens);
     for (let g = 1; g <= 9; g++) {
       const r = GEN_RANGES[g - 1];
@@ -917,7 +942,7 @@ function renderTri(keepScroll) {
     body.appendChild(box);
   }
   const unk = fullList.filter(e => fileInfo(e).n == null).length;
-  const active = tri.gens.length > 0 || !!tri.champ;
+  const active = tri.gens.length > 0 || !!tri.champ || !!tri.champA || !!tri.champB;
   $('triNote').textContent = (fullList.length ? all.length + " pokémon(s) dans la roue" : "Liste non chargée") +
     (!active ? " · rien de coché = tous les pokémons" : "") +
     (active && unk ? " · " + unk + " fichier(s) sans numéro ignoré(s)" : "");
@@ -1097,7 +1122,10 @@ if (OV) {
   }
   const g = (OV_P.get('gen') || '').split(',').map(Number).filter(n => n >= 1 && n <= 9);
   if (g.length) tri.gens = g;
-  if (OV_P.get('champions') === '1') tri.champ = true;
+  { const c = (OV_P.get('champions') || '').toLowerCase();   // champions=1 ou mc : règlement M-C · champions=ma : règlement M-A · champions=mc,ma : les deux
+    if (c === '1' || c.split(',').includes('mc')) tri.champ = true;
+    if (c.split(',').includes('ma')) tri.champA = true;
+    if (c.split(',').includes('mb')) tri.champB = true; }
   if (OV_P.get('retirer') === '1') $('remove').checked = true;
   muted = OV_P.get('son') !== '1';
   const th = OV_P.get('theme'); if (th && THEMES[th]) themeChoice = th;
