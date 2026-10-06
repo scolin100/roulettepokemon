@@ -119,6 +119,23 @@
   #nbSel { display:flex; gap:4px; }
   #nbSel button { flex:1; padding:8px 0; }
   #nbSel button.on { background:var(--orange); color:#111; border-color:var(--orange); font-weight:700; }
+  .btnrow { display:flex; gap:8px; } .btnrow button { flex:1; padding-left:6px; padding-right:6px; }
+  #yearBar { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  #yearBar .ttl { font-size:18px; font-weight:700; flex:1; text-align:center; }
+  #yearBody { flex:1; overflow:auto; }
+  .ygrid { display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; }
+  .ym { cursor:pointer; padding:6px; border-radius:10px; border:1px solid transparent; } .ym:hover { border-color:#3a4258; background:#171b27; }
+  .ym h4 { margin:0 0 4px; font-size:14px; text-transform:capitalize; }
+  .mg { display:grid; grid-template-columns:repeat(7, 1fr); gap:2px; }
+  .mg .wh { font-size:10px; opacity:.55; text-align:center; }
+  .mg .yd { aspect-ratio:1; border-radius:4px; font-size:11px; font-weight:600; padding:1px 3px; display:flex; flex-direction:column; justify-content:space-between; }
+  .mg .yd i { font-style:normal; font-size:8px; text-align:right; line-height:1; }
+  .mg .yd.today { outline:2px solid #fff; outline-offset:-1px; }
+  .mg.big { gap:4px; } .mg.big .wh { font-size:12px; }
+  .mg.big .yd { aspect-ratio:auto; min-height:84px; border-radius:8px; font-size:14px; padding:5px 6px; gap:2px; justify-content:flex-start; }
+  .mg.big .yd small { font-size:11px; font-weight:500; line-height:1.2; opacity:.95; }
+  .mg.big .yd .tn { font-weight:700; }
+  @media (max-width:900px) { .ygrid { grid-template-columns:repeat(2, 1fr); } .mg.big .yd { min-height:56px; } .mg.big .yd small { display:none; } }
   #calNote { font-size:13px; opacity:.8; }
   #calList { flex:1; overflow:auto; display:flex; flex-direction:column; gap:8px; }
   .calev { background:#1a1f2c; border:1px solid #2a3042; border-radius:10px; padding:10px 12px; }
@@ -322,7 +339,7 @@
   <div class="nbsel"><span>🎰 Nombre de tirages</span><div id="nbSel"><button data-n="1">1</button><button data-n="3">3</button><button data-n="6">6</button></div></div>
   <button id="histBtn">📜 Historique des tirages</button>
   <button id="dexBtn">📖 Pokédex</button>
-  <button id="calBtn">📅 Calendrier des shinys</button>
+  <div class="btnrow"><button id="calBtn">📅 Shinys boostés</button><button id="yearBtn">🗓️ Calendrier</button></div>
   <button id="manageMem">🗂 Gérer la mémoire</button>
   <button id="resetMem">↺ Réinitialiser la mémoire</button>
   <div class="social">
@@ -381,6 +398,15 @@
     <div class="mhead"><strong>📅 Calendrier des shinys boostés</strong><button id="calClose">✕</button></div>
     <div id="calNote"></div>
     <div id="calList"></div>
+  </div>
+</div>
+
+<div id="year" class="modal hidden">
+  <div class="box wide" style="height:min(92vh,900px)">
+    <div class="mhead"><strong>🗓️ Calendrier</strong><button id="yearClose">✕</button></div>
+    <div id="yearBar"><button id="yearPrev">◀</button><span class="ttl" id="yearTtl"></span><button id="yearNext">▶</button></div>
+    <div id="yearBody"></div>
+    <div class="mfoot"><span id="yearNote">Clique sur un mois pour le zoomer · ✨ = jour de shiny boosté (1/512)</span><button id="yearBack" style="display:none">↩ Retour à l'année</button></div>
   </div>
 </div>
 
@@ -529,20 +555,41 @@ const dayR = (m, d) => y => [new Date(y, m, d), new Date(y, m, d, 23, 59, 59, 99
 const winR = (m, d) => y => [new Date(y, m, d - 7), new Date(y, m, d + 2, 23, 59, 59, 999)];           // même fenêtre que les thèmes (inWindow)
 const easterR = y => { const e = easterSunday(y); return [new Date(y, e.getMonth(), e.getDate() - 3), new Date(y, e.getMonth(), e.getDate() + 1, 23, 59, 59, 999)]; };
 const NEWYEAR_R = y => [new Date(y, 11, 30), new Date(y + 1, 0, 5, 23, 59, 59, 999)];                 // 30 déc → 5 janv
-const BOOST_EVENTS = [
-  { name: 'Nouvel An 🎆', range: NEWYEAR_R, match: inSet(new Set([25, 163, 197, 79, 80, 199, 1, 4, 7, 20, 33, 94, 202, 39, 265, 554, 129])), list: true },
-  { name: 'Nouvel An chinois 🧧', range: cnyR, match: inSet(new Set([19, 572, 183, 128, 241, 626, 56, 727, 243, 427, 659, 814, 147, 148, 130, 23, 95, 495, 77, 78, 522, 179, 181, 672, 390, 190, 391, 255, 256, 257, 261, 58, 835, 325, 498, 326])), list: true, desc: 'Les 12 animaux du zodiaque chinois' },
-  { name: 'Pokémon Day', range: dayR(1, 27), match: () => true, desc: 'Tous les pokémons' },
-  { name: 'Kanto · Johto · Hoenn · Sinnoh · Hisui', range: dayR(1, 23), match: (n, f) => n <= 493 || (n >= 899 && n <= 905) || f === 'hisui', desc: "Pokémons n°1 à 493 et n°899 à 905, plus toutes les formes d'Hisui" },
-  { name: 'Galar', range: dayR(3, 23), match: inRange(810, 898, 'galar'), desc: 'Pokémons n°810 à 898, plus toutes les formes de Galar' },
-  { name: 'Pâques 🥚', range: easterR, match: inSet(new Set([102, 103, 113, 175, 183, 184, 225, 242, 255, 427, 428, 440, 659, 660, 722, '100:hisui'])), list: true },
-  { name: 'Unys · Alola', range: dayR(6, 4), match: (n, f) => inRange(494, 649)(n, f) || inRange(722, 807, 'alola')(n, f), desc: "Pokémons n°494 à 649 et n°722 à 807, plus toutes les formes d'Alola" },
-  { name: 'Kalos', range: dayR(6, 14), match: inRange(650, 721), desc: 'Pokémons n°650 à 721' },
-  { name: 'Paldea', range: dayR(9, 12), match: inRange(906, 1025, 'paldea'), desc: 'Pokémons n°906 à 1025, plus toutes les formes de Paldea' },
-  { name: 'Halloween 🎃', range: winR(9, 31), match: inSet(new Set([92, 93, 94, 200, 302, 354, 429, 607, 608, 609, 708, 709, 710, 711, 778, 855, 971, 972])), list: true },
-  { name: 'Noël 🎄', range: winR(11, 25), match: inSet(new Set([124, 225, 234, 459, 460, 478, 547, 582, 583, 584, 608, 613, 614, 615, 765, 820, 858, 872])), list: true },
+// ---- régions : jours de boost (« dates ») + thème du jeu appliqué ces jours-là s'il n'y a aucun autre thème ; « plus » = jours de boost supplémentaires sans thème ----
+// Ordre = priorité des thèmes quand plusieurs régions tombent le même jour : de la plus récente (Paldea) à la plus ancienne (Kanto)
+const datesR = list => y => list.map(([m, d]) => [new Date(y, m, d), new Date(y, m, d, 23, 59, 59, 999)]);
+const REGION_EVENTS = [
+  { key: 'paldea', name: 'Paldea', theme: 'ecarlateviolet', match: inRange(906, 1025, 'paldea'), desc: 'Pokémons n°906 à 1025, plus toutes les formes de Paldea',
+    dates: [[10, 18], [8, 13], [11, 14]], plus: [[9, 12]] },
+  { key: 'galar', name: 'Galar', theme: 'epeebouclier', match: inRange(810, 898, 'galar'), desc: 'Pokémons n°810 à 898, plus toutes les formes de Galar',
+    dates: [[10, 15], [5, 17], [9, 23]], plus: [[3, 23]] },
+  { key: 'alola', name: 'Alola', theme: 'soleillune', match: inRange(722, 807, 'alola'), desc: "Pokémons n°722 à 807, plus toutes les formes d'Alola",
+    dates: [[10, 18], [10, 23], [10, 17]], plus: [[6, 4]] },
+  { key: 'kalos', name: 'Kalos', theme: 'xy', match: inRange(650, 721), desc: 'Pokémons n°650 à 721',
+    dates: [[9, 12], [9, 16], [11, 10]], plus: [[6, 14]] },
+  { key: 'unys', name: 'Unys', theme: 'noirblanc', match: inRange(494, 649), desc: 'Pokémons n°494 à 649',
+    dates: [[8, 18], [2, 6], [2, 4], [5, 23], [9, 7], [9, 12]], plus: [[6, 4]] },
+  { key: 'sinnoh', name: 'Sinnoh · Hisui', theme: 'platine', match: (n, f) => (n >= 387 && n <= 493) || (n >= 899 && n <= 905) || f === 'hisui', desc: "Pokémons n°387 à 493 et n°899 à 905, plus toutes les formes d'Hisui",
+    dates: [[5, 28], [3, 22], [6, 27], [8, 13], [2, 22], [4, 22], [10, 19], [0, 28]], plus: [[1, 23]] },
+  { key: 'hoenn', name: 'Hoenn', theme: 'emeraude', match: inRange(252, 386), desc: 'Pokémons n°252 à 386',
+    dates: [[10, 21], [2, 19], [6, 25], [8, 16], [4, 1], [9, 21], [10, 28]], plus: [[1, 23]] },
+  { key: 'johto', name: 'Johto', theme: 'orargent', match: inRange(152, 251), desc: 'Pokémons n°152 à 251',
+    dates: [[10, 21], [9, 15], [3, 6], [11, 14], [6, 30], [9, 31]], plus: [[1, 23]] },
+  { key: 'kanto', name: 'Kanto', theme: 'jaune', match: inRange(1, 151), desc: 'Pokémons n°1 à 151',
+    dates: [[9, 15], [8, 1], [10, 12], [9, 19], [5, 16], [0, 29], [8, 7], [9, 1], [10, 16]], plus: [[1, 23]] },
 ];
-BOOST_EVENTS.forEach(ev => { ev.when = now => rangeHas(ev.range, now); });
+REGION_EVENTS.forEach(r => { r.ranges = datesR(r.dates.concat(r.plus || [])); });
+const BOOST_EVENTS = [
+  { name: 'Nouvel An 🎆', theme: 'nouvelan', range: NEWYEAR_R, match: inSet(new Set([25, 163, 197, 79, 80, 199, 1, 4, 7, 20, 33, 94, 202, 39, 265, 554, 129])), list: true },
+  { name: 'Nouvel An chinois 🧧', theme: 'chinois', range: cnyR, match: inSet(new Set([19, 572, 183, 128, 241, 626, 56, 727, 243, 427, 659, 814, 147, 148, 130, 23, 95, 495, 77, 78, 522, 179, 181, 672, 390, 190, 391, 255, 256, 257, 261, 58, 835, 325, 498, 326])), list: true },
+  { name: 'Pokémon Day', theme: 'jaune', range: dayR(1, 27), match: () => true, desc: 'Tous les pokémons' },
+  { name: 'Pâques 🥚', theme: 'paques', range: easterR, match: inSet(new Set([102, 103, 113, 175, 183, 184, 225, 242, 255, 427, 428, 440, 659, 660, 722, '100:hisui'])), list: true },
+  { name: 'Halloween 🎃', theme: 'halloween', range: winR(9, 31), match: inSet(new Set([92, 93, 94, 200, 302, 354, 429, 607, 608, 609, 708, 709, 710, 711, 778, 855, 971, 972])), list: true },
+  { name: 'Noël 🎄', theme: 'noel', range: winR(11, 25), match: inSet(new Set([124, 225, 234, 459, 460, 478, 547, 582, 583, 584, 608, 613, 614, 615, 765, 820, 858, 872])), list: true },
+  ...REGION_EVENTS,
+];
+const evRanges = (ev, y) => ev.ranges ? ev.ranges(y) : [ev.range(y)];
+BOOST_EVENTS.forEach(ev => { ev.when = now => { const y = now.getFullYear(); return [y - 1, y].some(yy => evRanges(ev, yy).some(r => now >= r[0] && now <= r[1])); }; });
 function shinyOdds(entry) {
   if (SHINY_ODDS <= 0) return 0;
   if (entry) {
@@ -917,26 +964,53 @@ function renderCal() {
   const odds = Math.min(SHINY_ODDS || BOOST_ODDS, BOOST_ODDS);
   $('calNote').textContent = SHINY_ODDS > 0 ? "Les jours indiqués, les pokémons concernés passent à 1 chance sur " + odds + " d'être shiny (au lieu de 1 sur " + SHINY_ODDS + ")." : "Les shinys sont désactivés.";
   const list = $('calList'); list.innerHTML = '';
-  const evs = BOOST_EVENTS.map(ev => { const r = [y - 1, y, y + 1].map(yy => ev.range(yy)).find(rr => rr[1] >= now); return { ev, r, on: ev.when(now) }; })
-    .sort((a, b) => (b.on - a.on) || (a.r[0] - b.r[0]));        // en cours d'abord, puis prochains par date
-  evs.forEach(({ ev, r, on }) => {
+  // couleurs : chaque événement prend la couleur d'accent de son thème ; la carte en cours prend celle du thème actuel — seulement si elle est lisible sur le fond des cartes
+  const CARD_BG = [26, 31, 44];
+  const lum = c => { const v = c.map(x => { x /= 255; return x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4); }); return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]; };
+  const contrast = c => { const a = lum(c) + .05, b = lum(CARD_BG) + .05; return a > b ? a / b : b / a; };
+  const rgbOf = str => { const m = (str || '').trim().match(/^#([0-9a-f]{6})$/i); return m ? [0, 2, 4].map(i => parseInt(m[1].substr(i, 2), 16)) : null; };
+  const root = document.documentElement, cur = root.dataset.theme;
+  const accentOf = (t, v) => { try { if (t && t !== 'default') root.dataset.theme = t; else delete root.dataset.theme; return getComputedStyle(root).getPropertyValue(v || '--orange'); } finally { if (cur) root.dataset.theme = cur; else delete root.dataset.theme; } };
+  const readable = str => { const c = rgbOf(str); return c && contrast(c) >= 3 ? str.trim() : null; };
+  const curAccent = readable(accentOf(cur));
+  const evColor = ev => readable(accentOf(ev.theme || 'default')) || readable(accentOf(ev.theme || 'default', '--blue'));   // accent du thème, sinon sa couleur de fond si l'accent est trop sombre (ex. Kanto / jaune)
+  // prochaine occurrence de chaque événement (ou occurrence en cours), puis regroupement des événements qui tombent aux mêmes dates
+  const groups = new Map();
+  BOOST_EVENTS.forEach(ev => {
+    const r = [y - 1, y, y + 1].flatMap(yy => evRanges(ev, yy)).filter(rr => rr[1] >= now).sort((p, q) => p[0] - q[0])[0];
+    const k = r[0].getTime() + '-' + r[1].getTime();
+    if (!groups.has(k)) groups.set(k, { r, evs: [] });
+    groups.get(k).evs.push(ev);
+  });
+  [...groups.values()].sort((a, b) => a.r[0] - b.r[0]).forEach(({ r, evs }) => {
+    const on = now >= r[0] && now <= r[1];
     const box = document.createElement('div'); box.className = 'calev' + (on ? ' on' : '');
+    const onCol = on ? (curAccent || evColor(evs[0])) : null;
+    if (onCol) { box.style.borderColor = onCol; box.style.boxShadow = '0 0 0 1px ' + onCol + ' inset'; }
     const head = document.createElement('div'); head.className = 'ch';
-    const nm = document.createElement('span'); nm.className = 'cn'; nm.textContent = ev.name;
-    const dt = document.createElement('span'); dt.className = 'cd';
     const same = r[0].toDateString() === r[1].toDateString();
-    dt.textContent = (on ? '● En cours · ' : '') + (same ? 'le ' + fmtDay(r[0]) : 'du ' + fmtDay(r[0]) + ' au ' + fmtDay(r[1])) + (r[0].getFullYear() !== y ? ' ' + r[0].getFullYear() : '');
+    const nm = document.createElement('span'); nm.className = 'cn';
+    nm.textContent = (same ? 'Le ' + fmtDay(r[0]) : 'Du ' + fmtDay(r[0]) + ' au ' + fmtDay(r[1])) + (r[0].getFullYear() !== y ? ' ' + r[0].getFullYear() : '');
+    const dt = document.createElement('span'); dt.className = 'cd'; dt.textContent = on ? '● En cours' : ''; if (onCol) dt.style.color = onCol;
     head.appendChild(nm); head.appendChild(dt); box.appendChild(head);
-    const seen = new Set(), names = [];
-    fullList.forEach(e => { const f = fileInfo(e); if (f.n == null || !ev.match(f.n, f.form)) return; const k = f.n + ':' + (f.form || ''); if (seen.has(k)) return; seen.add(k); names.push(e); });
-    const sub = document.createElement('div'); sub.className = 'cs';
-    sub.textContent = (ev.desc ? ev.desc + ' · ' : '') + (fullList.length ? names.length + ' pokémons' : '');
-    box.appendChild(sub);
-    if (ev.list) {
-      const cl = document.createElement('div'); cl.className = 'cl';
-      names.forEach(e => { const sp = document.createElement('span'); sp.textContent = dexPretty(e.name); cl.appendChild(sp); });
-      box.appendChild(cl);
-    }
+    evs.forEach(ev => {
+      const sec = document.createElement('div'); sec.style.marginTop = '6px';
+      const col = evColor(ev) || (on && curAccent) || null;             // chaque événement garde sa couleur ; sinon, carte en cours : couleur du thème actuel si lisible
+      if (col) { sec.style.borderLeft = '4px solid ' + col; sec.style.paddingLeft = '8px'; }
+      const t = document.createElement('div'); t.style.fontWeight = '700'; t.textContent = ev.name; if (col) t.style.color = col; sec.appendChild(t);
+      if (on && ev.theme && ev.theme === cur) { const tag = document.createElement('small'); tag.textContent = '  🎨 thème appliqué'; tag.style.opacity = '.8'; tag.style.fontWeight = '400'; t.appendChild(tag); }
+      const seen = new Set(), names = [];
+      fullList.forEach(e => { const f = fileInfo(e); if (f.n == null || !ev.match(f.n, f.form)) return; const kk = f.n + ':' + (f.form || ''); if (seen.has(kk)) return; seen.add(kk); names.push(e); });
+      const sub = document.createElement('div'); sub.className = 'cs';
+      sub.textContent = (ev.desc ? ev.desc + ' · ' : '') + (fullList.length ? names.length + ' pokémons' : '');
+      sec.appendChild(sub);
+      if (ev.list) {
+        const cl = document.createElement('div'); cl.className = 'cl';
+        names.forEach(e => { const sp = document.createElement('span'); sp.textContent = dexPretty(e.name); cl.appendChild(sp); });
+        sec.appendChild(cl);
+      }
+      box.appendChild(sec);
+    });
     list.appendChild(box);
   });
 }
@@ -945,6 +1019,75 @@ function closeCal() { $('cal').classList.add('hidden'); }
 $('calBtn').onclick = openCal;
 $('calClose').onclick = closeCal;
 $('cal').addEventListener('mousedown', e => { if (e.target === $('cal')) closeCal(); });
+
+// ---- calendrier annuel : thème et jours de boost de chaque jour, zoom sur un mois ----
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+const JOURS = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
+const _themeBg = {};
+function themeBg(t) {
+  if (_themeBg[t]) return _themeBg[t];
+  const root = document.documentElement, cur = root.dataset.theme;
+  try { if (t && t !== 'default') root.dataset.theme = t; else delete root.dataset.theme; _themeBg[t] = getComputedStyle(root).getPropertyValue('--blue').trim(); }
+  finally { if (cur) root.dataset.theme = cur; else delete root.dataset.theme; }
+  return _themeBg[t];
+}
+function ink(hex) {                                   // texte noir ou blanc selon la luminosité du fond
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return '#fff';
+  const c = [0, 2, 4].map(i => parseInt(m[1].substr(i, 2), 16) / 255).map(x => x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4));
+  return (.2126 * c[0] + .7152 * c[1] + .0722 * c[2]) > .4 ? '#111' : '#fff';
+}
+function dayInfo(d) {
+  const t = autoTheme(d);
+  return { t, name: (THEMES[t] && THEMES[t].name) || t, ev: BOOST_EVENTS.filter(e => e.when(d)).map(e => e.name) };
+}
+let yYear = new Date().getFullYear(), yMonth = null;
+function monthGrid(y, m, big) {
+  const g = document.createElement('div'); g.className = 'mg' + (big ? ' big' : '');
+  JOURS.forEach(j => { const h = document.createElement('div'); h.className = 'wh'; h.textContent = j; g.appendChild(h); });
+  const first = new Date(y, m, 1), lead = (first.getDay() + 6) % 7, n = new Date(y, m + 1, 0).getDate(), today = new Date();
+  for (let i = 0; i < lead; i++) g.appendChild(document.createElement('div'));
+  for (let d = 1; d <= n; d++) {
+    const dt = new Date(y, m, d, 12), inf = dayInfo(dt), bg = themeBg(inf.t);
+    const c = document.createElement('div'); c.className = 'yd' + (dt.toDateString() === today.toDateString() ? ' today' : '');
+    c.style.background = bg; c.style.color = ink(bg);
+    const num = document.createElement('span'); num.textContent = d; c.appendChild(num);
+    if (big) {
+      if (inf.t !== 'default') { const t = document.createElement('small'); t.className = 'tn'; t.textContent = inf.name; c.appendChild(t); }
+      inf.ev.forEach(n2 => { const s2 = document.createElement('small'); s2.textContent = '✨ ' + n2; c.appendChild(s2); });
+    } else {
+      if (inf.ev.length) { const i = document.createElement('i'); i.textContent = '✨'; c.appendChild(i); }
+      c.title = inf.name + (inf.ev.length ? ' · boost : ' + inf.ev.join(', ') : '');
+    }
+    g.appendChild(c);
+  }
+  return g;
+}
+function renderYear() {
+  const body = $('yearBody'); body.innerHTML = '';
+  $('yearTtl').textContent = yMonth == null ? String(yYear) : MOIS[yMonth].charAt(0).toUpperCase() + MOIS[yMonth].slice(1) + ' ' + yYear;
+  $('yearBack').style.display = yMonth == null ? 'none' : '';
+  if (yMonth == null) {
+    const grid = document.createElement('div'); grid.className = 'ygrid';
+    for (let m = 0; m < 12; m++) {
+      const box = document.createElement('div'); box.className = 'ym';
+      const h = document.createElement('h4'); h.textContent = MOIS[m]; box.appendChild(h);
+      box.appendChild(monthGrid(yYear, m, false));
+      box.onclick = () => { yMonth = m; renderYear(); };
+      grid.appendChild(box);
+    }
+    body.appendChild(grid);
+  } else body.appendChild(monthGrid(yYear, yMonth, true));
+  body.scrollTop = 0;
+}
+function yearStep(k) { if (yMonth == null) yYear += k; else { yMonth += k; if (yMonth < 0) { yMonth = 11; yYear--; } else if (yMonth > 11) { yMonth = 0; yYear++; } } renderYear(); }
+function openYear() { closeSheet(); yYear = new Date().getFullYear(); yMonth = null; $('year').classList.remove('hidden'); renderYear(); }
+function closeYear() { $('year').classList.add('hidden'); }
+$('yearBtn').onclick = openYear;
+$('yearClose').onclick = closeYear;
+$('yearPrev').onclick = () => yearStep(-1);
+$('yearNext').onclick = () => yearStep(1);
+$('yearBack').onclick = () => { yMonth = null; renderYear(); };
+$('year').addEventListener('mousedown', e => { if (e.target === $('year')) closeYear(); });
 function addHistory(win) {
   if (win.entry) recordDex(win.entry.id, SHINY_RE.test(win.name), win.shiny ? win.src : null);
   const rec = { n: win.name, t: Date.now() };
@@ -1009,6 +1152,7 @@ spinBtn.onclick = () => { closeSheet(); spin(); };
 addEventListener('keydown', e => {
   if (!$('mem').classList.contains('hidden')) { if (e.key === 'Escape') closeMem(); return; }  // fenêtre mémoire ouverte
   if (!$('tri').classList.contains('hidden')) { if (e.key === 'Escape') closeTri(); return; }
+  if (!$('year').classList.contains('hidden')) { if (e.key === 'Escape') { if (yMonth != null) { yMonth = null; renderYear(); } else closeYear(); } return; }
   if (!$('cal').classList.contains('hidden')) { if (e.key === 'Escape') closeCal(); return; }
   if (!$('dex').classList.contains('hidden')) { if (e.key === 'Escape') closeDex(); return; }
   if (!$('hist').classList.contains('hidden')) { if (e.key === 'Escape') closeHist(); return; } // fenêtre historique ouverte
@@ -1248,6 +1392,7 @@ function autoTheme(now) {
   if (inEaster(now)) return 'paques';              // jeudi avant Pâques → lundi de Pâques
   if (sameDay(2, 17, now)) return 'patrick';       // Saint-Patrick : 17 mars uniquement
   if (sameDay(1, 14, now)) return 'valentin';      // Saint-Valentin : 14 fév uniquement
+  if (sameDay(1, 27, now)) return 'jaune';         // Pokémon Day : 27 fév uniquement
   if (rangeHas(cnyR, now)) return 'chinois';      // Nouvel An chinois : veille → 7e jour (la Saint-Valentin garde la priorité le 14 fév)
   if (sameDay(4, 1, now)) return 'muguet';         // 1er mai uniquement
   if (sameDay(5, 21, now)) return 'musique';
@@ -1257,6 +1402,7 @@ function autoTheme(now) {
   if (sameDay(6, 21, now)) return 'belgique';      // 21 juillet uniquement
   if (sameDay(7, 1, now)) return 'suisse';         // 1er août uniquement
   for (const k in GAME_DATES) if (GAME_DATES[k].some(([m, d]) => sameDay(m, d, now))) return k;   // thèmes des jeux (jours précis)
+  for (const r of REGION_EVENTS) if (r.dates.some(([m, d]) => sameDay(m, d, now))) return r.theme;   // jours de région : thème du jeu (Paldea → Kanto), si aucun autre thème n'est appliqué (octobre rose ne compte pas)
   if (now.getMonth() === 9) return 'rose';         // Octobre rose (sauf Halloween et autres jours spéciaux, prioritaires)
   return 'default';
 }
