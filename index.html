@@ -210,8 +210,8 @@
   html.ov, html.ov body, html.ov #area, html.ov #stage { background:transparent; }
   html.ov #panel, html.ov #socialFixed, html.ov .modal, html.ov #sheetBack { display:none !important; }
   html.ov:not(.ovdeco) #bg { display:none; }
-  html.ov #stage { transition:opacity .6s ease; }
-  html.ov #stage.ovhide { opacity:0; }
+  html.ov #stage { transition:opacity .6s ease, visibility 0s linear 0s; }
+  html.ov #stage.ovhide { opacity:0; visibility:hidden; transition:opacity .6s ease, visibility 0s linear .6s; }
 </style>
 </head>
 <body>
@@ -891,6 +891,13 @@ $('themeSel').onchange = e => {
 //           &cache=1 (roue invisible tant qu'il n'y a pas de tirage)   &duree=10 (secondes d'affichage du résultat, avec cache)
 //           &auto=30 (nouveau tirage automatique toutes les 30 s)      &gen=1,2,7 (générations)
 //           &retirer=1 (retire le pokémon tiré)   &son=1 (son activé)   &theme=rouge (thème)
+// retour de la page d'autorisation Twitch : le jeton est dans l'adresse (#access_token=…), l'adresse d'origine dans « state »
+if (location.hash.indexOf('access_token=') >= 0) {
+  const h = new URLSearchParams(location.hash.slice(1));
+  try { if (h.get('access_token')) localStorage.setItem('roulette_twitch_token', h.get('access_token')); } catch (e) {}
+  const st = h.get('state');
+  window.history.replaceState(null, '', location.pathname + (st ? '?' + st : location.search));
+}
 const OV_P = new URLSearchParams(location.search);
 const OV = OV_P.has('overlay') && OV_P.get('overlay') !== '0';
 if (OV) {
@@ -916,9 +923,85 @@ if (OV) {
     if (cache) setTimeout(() => stage.classList.add('ovhide'), duree * 1000);
     if (auto > 0) timer = setTimeout(() => spin(), Math.max(auto, cache ? duree + 1 : 0) * 1000);
   };
-  addEventListener('click', () => { if (state === 'idle' || state === 'done') spin(); });
+  if (!OV_P.get('clientid')) ['click', 'mousedown', 'pointerdown'].forEach(ev => addEventListener(ev, () => { if (state === 'idle' || state === 'done') spin(); }));
+  if (OV_P.get('debug') === '1') {   // petit diagnostic en haut à gauche
+    const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:6px;top:6px;z-index:99;background:#000c;color:#0f0;font:14px monospace;padding:4px 8px;white-space:pre';
+    document.body.appendChild(d);
+    setInterval(() => { d.textContent = 'etat=' + state + ' cache=' + stage.classList.contains('ovhide') + ' images=' + all.length + ' zone=' + $('area').clientWidth + 'x' + $('area').clientHeight + ' ua=' + (navigator.userAgent.match(/Chrome\/[\d.]+/) || ['?'])[0]; }, 300);
+  }
   if (auto > 0) timer = setTimeout(() => { if (state === 'idle') spin(); }, auto * 1000);
   window.roulette = { tirer: () => spin() };
+  if (OV_P.get('clientid')) twitchInit(OV_P.get('clientid'), (OV_P.get('recompense') || '').trim().toLowerCase());
+}
+
+// ---- points de chaîne Twitch : une récompense échangée lance le tirage (EventSub WebSocket) ----
+// Adresse : ?overlay&clientid=TON_CLIENT_ID&recompense=Nom exact de la récompense&cache=1&duree=15
+function twitchInit(clientId, reward) {
+  const KEY = 'roulette_twitch_token';
+  const badge = document.createElement('div');
+  badge.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,.75);color:#fff;font:13px system-ui,Arial;cursor:pointer;display:none;max-width:90vw';
+  document.body.appendChild(badge);
+  const say = (txt, fn) => { badge.textContent = txt; badge.style.display = txt ? 'block' : 'none'; badge.onclick = fn || null; };
+  const store = { get: () => { try { return localStorage.getItem(KEY); } catch (e) { return null; } },
+                  set: v => { try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY); } catch (e) {} } };
+  const login = () => {
+    const u = 'https://id.twitch.tv/oauth2/authorize?client_id=' + encodeURIComponent(clientId) +
+      '&redirect_uri=' + encodeURIComponent(location.origin + location.pathname) +
+      '&response_type=token&scope=channel:read:redemptions&force_verify=true&state=' + encodeURIComponent(location.search.slice(1));
+    location.href = u;
+  };
+  const token = store.get();
+  if (!token) { say('Twitch : cliquer ici pour se connecter', login); return; }
+  const seen = new Set();
+  let ws = null, dog = null, closing = false;
+  async function connect() {
+    let j;
+    try {
+      const r = await fetch('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: 'OAuth ' + token } });
+      if (r.status === 401) { store.set(null); say('Twitch : connexion expirée, cliquer ici', login); return; }
+      j = await r.json();
+    } catch (e) { say('Twitch : réseau indisponible, nouvel essai…'); setTimeout(connect, 8000); return; }
+    if (!j.scopes || j.scopes.indexOf('channel:read:redemptions') < 0) { store.set(null); say('Twitch : autorisation manquante, cliquer ici', login); return; }
+    open(j.user_id, 'wss://eventsub.wss.twitch.tv/ws', false);
+  }
+  function open(uid, url, isReconnect) {
+    const w = new WebSocket(url);
+    const arm = secs => { clearTimeout(dog); dog = setTimeout(() => { try { w.close(); } catch (e) {} }, (secs || 15) * 1000); };
+    w.onmessage = ev => {
+      let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      const t = m.metadata && m.metadata.message_type;
+      if (m.metadata && m.metadata.message_id) { if (seen.has(m.metadata.message_id)) return; seen.add(m.metadata.message_id); if (seen.size > 200) seen.clear(); }
+      if (t === 'session_welcome') {
+        const ses = m.payload.session; arm((ses.keepalive_timeout_seconds || 10) + 5);
+        if (isReconnect) { if (ws && ws !== w) { closing = true; try { ws.close(); } catch (e) {} } ws = w; closing = false; return; }
+        ws = w; subscribe(uid, ses.id);
+      } else if (t === 'session_keepalive') { arm(20); }
+      else if (t === 'session_reconnect') { open(uid, m.payload.session.reconnect_url, true); }
+      else if (t === 'notification') {
+        arm(20);
+        const ev2 = m.payload.event || {}, title = ((ev2.reward && ev2.reward.title) || '').trim().toLowerCase();
+        if (m.payload.subscription.type === 'channel.channel_points_custom_reward_redemption.add' && (!reward || title === reward)) {
+          if (state === 'idle' || state === 'done') spin();
+        }
+      }
+    };
+    w.onclose = () => { clearTimeout(dog); if (w === ws && !closing) { ws = null; setTimeout(connect, 5000); } };
+    w.onerror = () => {};
+  }
+  async function subscribe(uid, sessionId) {
+    try {
+      const r = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+        method: 'POST',
+        headers: { 'Client-Id': clientId, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'channel.channel_points_custom_reward_redemption.add', version: '1',
+          condition: { broadcaster_user_id: uid }, transport: { method: 'websocket', session_id: sessionId } })
+      });
+      if (r.status === 401) { store.set(null); say('Twitch : connexion expirée, cliquer ici', login); return; }
+      if (!r.ok) { say('Twitch : erreur ' + r.status + ' (vérifie le Client ID)'); return; }
+      say('');
+    } catch (e) { say('Twitch : abonnement impossible'); }
+  }
+  connect();
 }
 applyTheme();
 fit();
