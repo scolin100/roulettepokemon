@@ -211,6 +211,14 @@
   html.ov #panel, html.ov #socialFixed, html.ov .modal, html.ov #sheetBack { display:none !important; }
   html.ov:not(.ovdeco) #bg { display:none; }
   html.ov #stage.ovhide { opacity:0; visibility:hidden; }
+  /* ---------- page à 3 tirages simultanés ---------- */
+  html.t3 #stage, html.t3 #socialFixed { display:none; }
+  html.t3 #area { background:var(--blue); }
+  #wheels { position:absolute; inset:0; display:flex; flex-wrap:wrap; }
+  #wheels iframe { flex:0 0 calc(100% / 3); width:calc(100% / 3); min-width:0; border:0; background:transparent; pointer-events:none; }
+  #wheels.six iframe { height:50%; }
+  html.fade #area { -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 17%, #000 83%, transparent 100%); mask-image:linear-gradient(to bottom, transparent 0, #000 17%, #000 83%, transparent 100%); }   /* 6 roues : les cartes s'estompent au bord, plus de coupure nette entre les rangées */
+  #wheels:not(.six) iframe { height:100%; }
 </style>
 </head>
 <body>
@@ -238,6 +246,8 @@
     <select id="themeSel"><option value="auto">Auto</option><option value="default">Bleu</option><option value="rouge">Rouge</option><option value="vert">Vert</option><option value="violet">Violet</option><option value="jaune">Jaune</option><option value="rose">Rose</option><option value="turquoise">Turquoise</option><option value="halloween">Halloween 🎃</option><option value="noel">Noël 🎄</option></select></div>
   <button id="soundBtn">🔊 Son activé</button>
   <button id="triBtn">🔎 Trier par génération</button>
+  <button id="tripleBtn" onclick="location.href=location.pathname+'?triple'">🎰 3 tirages simultanés</button>
+  <button id="sixBtn" onclick="location.href=location.pathname+'?six'">🎰 6 tirages simultanés</button>
   <button id="histBtn">📜 Historique des tirages</button>
   <button id="manageMem">🗂 Gérer la mémoire</button>
   <button id="resetMem">↺ Réinitialiser la mémoire</button>
@@ -299,6 +309,10 @@ const SPIN_MS = 7500;
 
 const PITCH = CARD_H + GAP;
 const $ = id => document.getElementById(id);
+const _QS = new URLSearchParams(location.search);
+const NB = _QS.has('six') ? 6 : 3;                       // nombre de roues (3 ou 6)
+const TRIPLE = _QS.has('triple') || _QS.has('six');                        // page à 3 roues (panneau + 3 roues dans des cadres)
+const CHILD = _QS.has('roue') && window.parent !== window;  // une des 3 roues (chargée dans la page triple)
 const stage = $('stage'), cardsEl = $('cards'), spinBtn = $('spin'), info = $('info');
 const IMG_RE = /\.(gif|png|jpe?g|webp|avif|bmp)$/i;
 const cleanName = n => n.replace(/\.[^.]+$/, '');
@@ -425,6 +439,7 @@ function render() {
 }
 
 async function showIdle() {
+  if (TRIPLE) return;
   state = 'loading';
   const loaded = await loadRandom(Math.min(10, all.length));
   if (!loaded.length) { info.textContent = "Impossible de charger les pokémons (vérifie le dossier « " + FOLDER + " »)"; state = 'idle'; return; }
@@ -434,16 +449,24 @@ async function showIdle() {
 }
 
 // ---- tirage ----
-async function spin() {
+async function spin(forceId) {
+  if (TRIPLE) return tripleSpin();
   if (state === 'spinning' || state === 'loading' || !all.length) return;
   initAudio();
   state = 'loading'; spinBtn.disabled = true;
   const old = objectUrls; objectUrls = [];
-  const loaded = await loadRandom(Math.min(LOAD_COUNT, all.length));
+  let loaded = await loadRandom(Math.min(LOAD_COUNT, all.length));
+  let forced = null;                                    // gagnant imposé par la page à 3 / 6 roues (jamais le même pokémon deux fois)
+  if (forceId) {
+    const fe = all.find(e => e.id === forceId);
+    if (fe) { loaded = loaded.filter(p => p.entry.id !== forceId); forced = await loadEntry(fe); if (!loaded.length && forced) loaded = [forced]; }
+  }
   if (!loaded.length) { state = 'idle'; spinBtn.disabled = false; info.textContent = "Erreur de chargement des pokémons"; return; }
   stage.classList.remove('done'); stopFx();
   const K = 48 + rnd(10);
-  strip = buildStrip(loaded, K + 6); renderStrip();
+  strip = buildStrip(loaded, K + 6);
+  if (forced) strip[K] = Object.assign({}, forced);
+  renderStrip();
   old.forEach(u => URL.revokeObjectURL(u));
   winnerIdx = K; offset = 0; render();
   if (window.__ovHide) window.__ovHide(false);
@@ -475,9 +498,10 @@ function finish() {
     win.el.style.opacity = 1;
     stage.classList.add('done');
     state = 'done'; fanfare();
-    addHistory(win);
     burst();
-    if ($('remove').checked) {
+    if (CHILD) { try { window.parent.tripleWin(win.name, win.entry.id); } catch (e) {} }   // historique + mémoire gérés par la page parente
+    else addHistory(win);
+    if (!CHILD && $('remove').checked) {
       all = all.filter(e => e !== win.entry);
       removed.add(win.entry.id); saveRemoved();
       info.textContent = all.length + " pokémons restants";
@@ -510,7 +534,7 @@ function initAudio() { try { ac = ac || new (window.AudioContext || window.webki
 // ---- bouton son (mémorisé entre les visites) ----
 let muted = false;
 try { muted = localStorage.getItem('roulette_muet') === '1'; } catch (e) {}
-function updateSoundBtn() { $('soundBtn').textContent = muted ? '🔇 Son coupé' : '🔊 Son activé'; }
+function updateSoundBtn() { $('soundBtn').textContent = muted ? '🔇 Son coupé' : '🔊 Son activé'; if (TRIPLE && window.__t3sound) window.__t3sound(); }
 $('soundBtn').onclick = () => {
   muted = !muted;
   try { localStorage.setItem('roulette_muet', muted ? '1' : '0'); } catch (e) {}
@@ -738,14 +762,25 @@ try { const s = JSON.parse(localStorage.getItem(TRI_KEY) || 'null'); if (s && ty
 if (tri.mode !== undefined && tri.mode !== 'gen') tri.gens = [];             // anciens réglages : « Aucun tri » / tri par jeu = pas de filtre
 delete tri.mode; delete tri.games;
 function saveTri() { try { localStorage.setItem(TRI_KEY, JSON.stringify(tri)); } catch (e) {} }
+// ---- Pokémon Champions : règlement M-C (liste officielle des pokémons autorisés, sans les Méga-évolutions) ----
+const CHAMP_BASE = new Set([3, 6, 9, 15, 18, 24, 25, 26, 36, 38, 40, 45, 53, 59, 65, 68, 71, 80, 83, 94, 115, 121, 122, 127, 128, 130, 132, 134, 135, 136, 142, 143, 149, 154, 157, 160, 168, 181, 184, 186, 196, 197, 199, 205, 208, 211, 212, 214, 227, 229, 248, 254, 257, 260, 279, 282, 302, 303, 306, 308, 310, 317, 319, 323, 324, 334, 350, 351, 354, 358, 359, 362, 373, 376, 389, 392, 395, 398, 405, 407, 409, 411, 428, 442, 445, 448, 450, 454, 460, 461, 464, 470, 471, 472, 473, 475, 478, 479, 497, 500, 503, 505, 510, 512, 514, 516, 518, 530, 531, 534, 545, 547, 553, 560, 563, 569, 571, 579, 584, 587, 604, 609, 614, 618, 623, 635, 637, 652, 655, 658, 660, 663, 666, 668, 671, 673, 675, 676, 678, 681, 683, 685, 687, 689, 691, 693, 695, 697, 699, 700, 701, 702, 706, 707, 709, 711, 713, 715, 724, 727, 730, 733, 740, 745, 748, 750, 752, 758, 763, 765, 766, 768, 778, 780, 784, 812, 815, 818, 823, 828, 841, 842, 844, 849, 853, 855, 858, 861, 863, 865, 866, 867, 869, 870, 871, 876, 877, 887, 899, 900, 902, 903, 904, 908, 911, 914, 923, 925, 930, 931, 934, 936, 937, 939, 943, 952, 956, 959, 964, 968, 970, 972, 979, 981, 983, 998, 1000, 1013, 1018, 1019]);
+const CHAMP_FORMS = new Set(["128:paldea", "157:hisui", "199:galar", "26:alola", "38:alola", "503:hisui", "53:alola", "571:hisui", "59:hisui", "618:galar", "706:hisui", "713:hisui", "724:hisui", "80:galar", "670:eternelle"]);   // formes régionales / Floette Éternelle autorisées (numéro:forme)
+function champOk(e) {
+  const f = fileInfo(e); if (f.n == null) return false;
+  if (f.form) return CHAMP_FORMS.has(f.n + ':' + f.form);              // forme régionale : seulement celles de la liste
+  return CHAMP_BASE.has(f.n);
+}
 function passFilter(e) {
+  if (tri.champ && !champOk(e)) return false;
   if (tri.gens.length) return matchGen(e, new Set(tri.gens), tri.formGen);
   return true;
 }
 function visible(e) { return !removed.has(e.id) && passFilter(e); }
 function triLabel() {
-  if (tri.gens.length) return ' — tri : ' + tri.gens.slice().sort((a, b) => a - b).map(g => g + 'G').join(', ');
-  return '';
+  const p = [];
+  if (tri.champ) p.push('Champions M-C');
+  if (tri.gens.length) p.push(tri.gens.slice().sort((a, b) => a - b).map(g => g + 'G').join(', '));
+  return p.length ? ' — tri : ' + p.join(' + ') : '';
 }
 
 // ---- fenêtre de tri ----
@@ -764,6 +799,10 @@ function renderTri(keepScroll) {
   const body = $('triBody'), top = body.scrollTop;
   body.innerHTML = '';
   {
+    const ch = chk('⚔️ Pokémon Champions · règlement M-C (sans les Méga)', !!tri.champ,
+      fullList.length ? triCount(e => champOk(e)) : null, on => setTri({ champ: on }));
+    ch.style.borderBottom = '2px solid #2a3042'; ch.style.marginBottom = '6px';
+    body.appendChild(ch);
     const sel = new Set(tri.gens);
     for (let g = 1; g <= 9; g++) {
       const r = GEN_RANGES[g - 1];
@@ -781,7 +820,7 @@ function renderTri(keepScroll) {
     body.appendChild(box);
   }
   const unk = fullList.filter(e => fileInfo(e).n == null).length;
-  const active = tri.gens.length > 0;
+  const active = tri.gens.length > 0 || !!tri.champ;
   $('triNote').textContent = (fullList.length ? all.length + " pokémon(s) dans la roue" : "Liste non chargée") +
     (!active ? " · rien de coché = tous les pokémons" : "") +
     (active && unk ? " · " + unk + " fichier(s) sans numéro ignoré(s)" : "");
@@ -911,6 +950,7 @@ if (OV) {
   }
   const g = (OV_P.get('gen') || '').split(',').map(Number).filter(n => n >= 1 && n <= 9);
   if (g.length) tri.gens = g;
+  if (OV_P.get('champions') === '1') tri.champ = true;
   if (OV_P.get('retirer') === '1') $('remove').checked = true;
   muted = OV_P.get('son') !== '1';
   const th = OV_P.get('theme'); if (th && THEMES[th]) themeChoice = th;
@@ -932,12 +972,62 @@ if (OV) {
     setInterval(() => { d.textContent = 'etat=' + state + ' masque=' + mq + ' cache=' + hidden + ' stage=' + JSON.stringify((r => [r.x|0, r.y|0, r.width|0, r.height|0])(stage.getBoundingClientRect())) + ' cartes=' + document.querySelectorAll('#stage img').length + ' images=' + all.length + ' zone=' + $('area').clientWidth + 'x' + $('area').clientHeight + ' ua=' + (navigator.userAgent.match(/Chrome\/[\d.]+/) || ['?'])[0]; }, 300);
   }
   if (auto > 0 && !OV_P.get('clientid')) timer = setTimeout(() => { if (state === 'idle') spin(); }, auto * 1000);   // avec Twitch : jamais de tirage automatique
-  window.roulette = { tirer: () => spin() };
+  window.roulette = { tirer: id => spin(id), etat: () => state, son: v => { muted = !v; } };
   if (OV_P.get('clientid')) twitchInit(OV_P.get('clientid'), (OV_P.get('recompense') || '').trim().toLowerCase());
 }
 
 // ---- points de chaîne Twitch : une récompense échangée lance le tirage (EventSub WebSocket) ----
 // Adresse : ?overlay&clientid=TON_CLIENT_ID&recompense=Nom exact de la récompense&cache=1&duree=15
+// ---- page « 3 tirages simultanés » : index.html?triple ----
+if (TRIPLE) {
+  document.documentElement.classList.add('t3');
+  const area = $('area'), wheels = document.createElement('div'); wheels.id = 'wheels';
+  area.insertBefore($('bg'), area.firstChild);        // le fond animé devient commun aux 3 roues
+  area.appendChild(wheels);
+  const frames = [];
+  wheels.classList.toggle('six', NB === 6);
+  for (let i = 0; i < NB; i++) {
+    const f = document.createElement('iframe');
+    f.setAttribute('allowtransparency', 'true');
+    f.src = location.pathname + '?overlay=1&roue=' + (i + 1) + (NB === 6 ? '&fade=1' : '') + (i === 0 && !muted ? '&son=1' : '');
+    wheels.appendChild(f); frames.push(f);
+  }
+  const R = f => { try { return f.contentWindow.roulette || null; } catch (e) { return null; } };
+  window.tripleSpin = () => {
+    const rs = frames.map(R);
+    if (rs.some(r => !r || !(r.etat() === 'idle' || r.etat() === 'done'))) return;
+    initAudio();
+    const seenN = new Set(), win = [];               // gagnants tous différents ET de numéros de pokédex différents (pas Tauros + Tauros de Paldea)
+    for (const e of sample(all, all.length)) {
+      const k = fileInfo(e).n != null ? fileInfo(e).n : e.id;
+      if (seenN.has(k)) continue;
+      seenN.add(k); win.push(e.id);
+      if (win.length >= NB) break;
+    }
+    rs.forEach((r, i) => r.tirer(win[i]));
+  };
+  window.tripleWin = (name, id) => {
+    addHistory({ name });
+    if ($('remove').checked) { removed.add(id); saveRemoved(); refreshAfterMem(); }
+  };
+  window.__t3sound = () => { const r = R(frames[0]); if (r && r.son) r.son(!muted); };
+  spinBtn.innerHTML = 'TIRER ×' + NB + '<br><small>(espace)</small>';
+  const tb = $('tripleBtn'); tb.textContent = '↩ Revenir à 1 seule roue'; tb.onclick = () => { location.href = location.pathname; };
+  const sb = $('sixBtn'); sb.textContent = NB === 6 ? '🎰 Passer à 3 roues' : '🎰 Passer à 6 roues'; sb.onclick = () => { location.href = location.pathname + (NB === 6 ? '?triple' : '?six'); };
+  setInterval(() => {
+    const rs = frames.map(R);
+    spinBtn.disabled = !all.length || rs.some(r => !r || !(r.etat() === 'idle' || r.etat() === 'done'));
+  }, 250);
+}
+// ---- une des 3 roues : se met à jour quand le parent change le tri, la mémoire ou le thème ----
+if (CHILD && _QS.get('fade') === '1') document.documentElement.classList.add('fade');
+if (CHILD) {
+  addEventListener('storage', e => {
+    if (e.key === MEM_KEY) { removed.clear(); loadRemoved().forEach(x => removed.add(x)); refreshAfterMem(); }
+    else if (e.key === TRI_KEY) { try { const t = JSON.parse(e.newValue || 'null'); if (t) tri = Object.assign({ gens: [], formGen: 'form' }, t); } catch (err) {} refreshAfterMem(); }
+    else if (e.key === THEME_KEY) { themeChoice = e.newValue || 'auto'; applyTheme(); }
+  });
+}
 function twitchInit(clientId, reward) {
   const KEY = 'roulette_twitch_token';
   const badge = document.createElement('div');
