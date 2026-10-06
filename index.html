@@ -944,7 +944,7 @@ function twitchInit(clientId, reward) {
   badge.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,.75);color:#fff;font:13px system-ui,Arial;cursor:pointer;display:none;max-width:90vw';
   document.body.appendChild(badge);
   const say = (txt, fn) => { badge.textContent = txt; badge.style.display = txt ? 'block' : 'none'; badge.onclick = fn || null; };
-  const store = { get: () => { try { return localStorage.getItem(KEY); } catch (e) { return null; } },
+  const store = { get: () => { if (OV_P.get('jeton')) return OV_P.get('jeton'); try { return localStorage.getItem(KEY); } catch (e) { return null; } },
                   set: v => { try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY); } catch (e) {} } };
   const login = () => {
     const u = 'https://id.twitch.tv/oauth2/authorize?client_id=' + encodeURIComponent(clientId) +
@@ -954,6 +954,7 @@ function twitchInit(clientId, reward) {
   };
   const token = store.get();
   if (!token) { say('Twitch : cliquer ici pour se connecter', login); return; }
+  if (OV_P.get('montrerjeton') === '1') { const t = document.createElement('textarea'); t.readOnly = true; t.value = token; t.style.cssText = 'position:fixed;left:8px;top:50px;z-index:99;width:420px;height:60px;font:12px monospace'; t.onclick = () => t.select(); document.body.appendChild(t); }
   const seen = new Set();
   let ws = null, dog = null, closing = false;
   async function connect() {
