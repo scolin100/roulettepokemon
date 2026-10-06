@@ -230,6 +230,8 @@
     --vig:rgba(0,0,20,.7); --card:rgba(6,8,30,.64); --card2:rgba(6,8,30,.44); --ray:rgba(255,211,77,.13); }
   html[data-theme="chinois"] { --blue:#a30f1f; --orange:#FFD34D; --acc-rgb:255,211,77; --glow:rgba(255,200,80,.42); --glow-l:rgba(255,200,80,.3);
     --vig:rgba(60,0,6,.68); --card:rgba(58,4,10,.64); --card2:rgba(58,4,10,.44); --ray:rgba(255,211,77,.14); }
+  html[data-theme="patrick"] { --blue:#0a6b2c; --orange:#FFC93C; --acc-rgb:255,201,60; --glow:rgba(150,255,150,.42); --glow-l:rgba(150,255,150,.3);
+    --vig:rgba(0,40,10,.68); --card:rgba(2,44,16,.64); --card2:rgba(2,44,16,.44); --ray:rgba(255,201,60,.14); }
   html[data-theme="paques"] { --blue:#5fa83a; --orange:#FFE45C; --acc-rgb:255,228,92; --glow:rgba(230,255,170,.5); --glow-l:rgba(230,255,170,.36);
     --vig:rgba(10,50,10,.6); --card:rgba(12,52,14,.6); --card2:rgba(12,52,14,.4); --ray:rgba(255,255,255,.14); }
   html[data-theme="suisse"] { --blue:#c8102e; --orange:#ffffff; --acc-rgb:255,255,255; --glow:rgba(255,190,190,.5); --glow-l:rgba(255,190,190,.36);
@@ -1156,6 +1158,7 @@ const THEMES = {
   canada:    { name: 'Fête du Canada 🇨🇦', conf: ['#ffffff', '#FF3B3B', '#ffffff', '#ff8a8a', '#ffffff', '#FF3B3B'], emo: ['🍁', '🍁', '🇨🇦', '🍁', '🎆', '🍁'], fall: true },
   belgique:  { name: 'Fête nationale belge 🇧🇪', conf: ['#FAD201', '#ED2939', '#ffffff', '#FAD201', '#ED2939', '#ffffff'], emo: ['🇧🇪', '🎆', '🍟', '🧇', '🎇', '✨'], fall: false },
   nouvelan:  { name: 'Nouvel An 🎆', conf: ['#FFD34D', '#ffffff', '#c9d3ff', '#FFD34D', '#ffffff', '#ffb347'], emo: ['🎆', '🎇', '🥂', '✨', '🍾', '🎉'], fall: false },
+  patrick:   { name: 'Saint-Patrick ☘️', conf: ['#FFC93C', '#ffffff', '#7dff9a', '#ff9a3c', '#FFC93C', '#c8ffd9'], emo: ['☘️', '🍀', '🌈', '🪙', '🍺', '🎩'], fall: false },
   chinois:   { name: 'Nouvel An chinois 🧧', conf: ['#FFD34D', '#ffffff', '#ff4d4d', '#ffb347', '#FFD34D', '#ff8a5c'], emo: ['🧧', '🏮', '🐉', '🎆', '🧨', '🪭'], fall: false },
   paques:    { name: 'Pâques 🐰', conf: ['#FFE45C', '#ffffff', '#ffb3d1', '#b8f0a0', '#c8b6ff', '#ffd1a0'], emo: ['🥚', '🐰', '🐣', '🌷', '🐥', '🌸'], fall: false },
   suisse:    { name: 'Fête nationale suisse 🇨🇭', conf: ['#ffffff', '#FF3B3B', '#ffffff', '#ffb3b3', '#ffffff', '#FF3B3B'], emo: ['🇨🇭', '🧀', '⛰️', '🍫', '🎆', '🎇'], fall: false },
@@ -1193,7 +1196,7 @@ const GAME_DATES = {
   epeebouclier: [[10, 15], [5, 17], [9, 23]],   // 15 nov, 17 juin, 23 oct
   ecarlateviolet: [[10, 18], [11, 14]],   // 18 nov, 14 déc
 };
-const SPECIAL = ['emeraude', 'orargent', 'rubissaphir', 'noirblanc', 'diamantperle', 'platine', 'xy', 'soleillune', 'epeebouclier', 'ecarlateviolet', 'valentin', 'muguet', 'musique', 'national', 'canada', 'belgique', 'suisse', 'quebec', 'nouvelan', 'chinois', 'paques', 'diamant', 'halloween', 'noel'];
+const SPECIAL = ['emeraude', 'orargent', 'rubissaphir', 'noirblanc', 'diamantperle', 'platine', 'xy', 'soleillune', 'epeebouclier', 'ecarlateviolet', 'valentin', 'muguet', 'musique', 'national', 'canada', 'belgique', 'suisse', 'quebec', 'nouvelan', 'chinois', 'patrick', 'paques', 'diamant', 'halloween', 'noel'];
 if (themeChoice !== 'auto' && (!THEMES[themeChoice] || (!TEST && SPECIAL.includes(themeChoice) && autoTheme() !== themeChoice))) themeChoice = 'auto';
 // Thème automatique : actif 7 jours avant la date et jusqu'à 2 jours après (inclus)
 function inWindow(month, day, now) {
@@ -1243,6 +1246,7 @@ function autoTheme(now) {
   if (inWindow(11, 25, now)) return 'noel';
   if ((now.getMonth() === 11 && now.getDate() >= 30) || (now.getMonth() === 0 && now.getDate() <= 5)) return 'nouvelan';   // 30 déc → 5 janv
   if (inEaster(now)) return 'paques';              // jeudi avant Pâques → lundi de Pâques
+  if (sameDay(2, 17, now)) return 'patrick';       // Saint-Patrick : 17 mars uniquement
   if (sameDay(1, 14, now)) return 'valentin';      // Saint-Valentin : 14 fév uniquement
   if (rangeHas(cnyR, now)) return 'chinois';      // Nouvel An chinois : veille → 7e jour (la Saint-Valentin garde la priorité le 14 fév)
   if (sameDay(4, 1, now)) return 'muguet';         // 1er mai uniquement
