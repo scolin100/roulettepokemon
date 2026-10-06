@@ -115,6 +115,10 @@
   #dexGrid .empty { grid-column:1 / -1; }
   @media (max-width:1000px) { #dexGrid { grid-template-columns:repeat(6, 1fr); } }
   @media (max-width:640px) { #dexGrid { grid-template-columns:repeat(3, 1fr); } }
+  .nbsel { display:flex; flex-direction:column; align-items:stretch; gap:6px; font-size:14px; }
+  #nbSel { display:flex; gap:4px; }
+  #nbSel button { flex:1; padding:8px 0; }
+  #nbSel button.on { background:var(--orange); color:#111; border-color:var(--orange); font-weight:700; }
   .htabs { display:flex; gap:6px; margin-bottom:8px; }
   .htabs button { flex:1; padding:8px 10px; border-radius:8px; border:1px solid #2a3042; background:transparent; color:inherit; cursor:pointer; font:inherit; }
   .htabs button.on { background:#2a3042; border-color:#ffd84a; }
@@ -301,8 +305,7 @@
     <select id="themeSel"><option value="auto">Auto</option><option value="default">Bleu</option><option value="rouge">Rouge</option><option value="vert">Vert</option><option value="violet">Violet</option><option value="jaune">Jaune</option><option value="rose">Rose</option><option value="turquoise">Turquoise</option><option value="shiny">Shiny ✨</option><option value="halloween">Halloween 🎃</option><option value="noel">Noël 🎄</option></select></div>
   <button id="soundBtn">🔊 Son activé</button>
   <button id="triBtn">🔎 Trier les pokémons</button>
-  <button id="tripleBtn" onclick="location.href=location.pathname+'?triple'">🎰 3 tirages simultanés</button>
-  <button id="sixBtn" onclick="location.href=location.pathname+'?six'">🎰 6 tirages simultanés</button>
+  <div class="nbsel"><span>🎰 Nombre de tirages</span><div id="nbSel"><button data-n="1">1</button><button data-n="3">3</button><button data-n="6">6</button></div></div>
   <button id="histBtn">📜 Historique des tirages</button>
   <button id="dexBtn">📖 Pokédex</button>
   <button id="manageMem">🗂 Gérer la mémoire</button>
@@ -387,6 +390,11 @@ const _QS = new URLSearchParams(location.search);
 const NB = _QS.has('six') ? 6 : 3;                       // nombre de roues (3 ou 6)
 const TRIPLE = _QS.has('triple') || _QS.has('six');                        // page à 3 roues (panneau + 3 roues dans des cadres)
 const CHILD = _QS.has('roue') && window.parent !== window;  // une des 3 roues (chargée dans la page triple)
+// sélecteur « nombre de tirages » : 1 / 3 / 6 roues
+document.querySelectorAll('#nbSel button').forEach(b => {
+  const n = +b.dataset.n; b.classList.toggle('on', n === (TRIPLE ? NB : 1));
+  b.onclick = () => { if (b.classList.contains('on')) return; location.href = location.pathname + (n === 3 ? '?triple' : n === 6 ? '?six' : ''); };
+});
 const stage = $('stage'), cardsEl = $('cards'), spinBtn = $('spin'), info = $('info');
 const IMG_RE = /\.(gif|png|jpe?g|webp|avif|bmp)$/i;
 const cleanName = n => n.replace(/\.[^.]+$/, '');
@@ -1005,7 +1013,7 @@ function renderTri(keepScroll) {
   const body = $('triBody'), top = body.scrollTop;
   body.innerHTML = '';
   $('triTabGen').classList.toggle('on', triTab === 'gen'); $('triTabFmt').classList.toggle('on', triTab === 'fmt');
-  $('triAll').style.display = $('triClear').style.display = triTab === 'gen' ? '' : 'none';
+  $('triAll').style.display = triTab === 'gen' ? '' : 'none';
   if (triTab === 'fmt') {
     const fmts = [['M-A', 'champA', champAOk], ['M-B', 'champB', champBOk], ['M-C', 'champ', champOk]];
     fmts.forEach(([n, k, fn]) => body.appendChild(chk('⚔️ Pokémon Champions · règlement ' + n, !!tri[k],
@@ -1043,7 +1051,7 @@ $('triBtn').onclick = openTri;
 $('triClose').onclick = closeTri;
 $('tri').addEventListener('mousedown', e => { if (e.target === $('tri')) closeTri(); });
 $('triAll').onclick = () => setTri({ gens: [1,2,3,4,5,6,7,8,9] });
-$('triClear').onclick = () => setTri({ gens: [] });
+$('triClear').onclick = () => setTri({ gens: [], champ: false, champA: false, champB: false });   // décoche tout : générations ET formats
 
 // ---- thèmes : Par défaut / Halloween / Noël (Auto = selon la date) ----
 const THEMES = {
@@ -1294,8 +1302,6 @@ if (TRIPLE) {
   };
   window.__t3sound = () => { const r = R(frames[0]); if (r && r.son) r.son(!muted); };
   spinBtn.innerHTML = 'TIRER ×' + NB + '<br><small>(espace)</small>';
-  const tb = $('tripleBtn'); tb.textContent = '↩ Revenir à 1 seule roue'; tb.onclick = () => { location.href = location.pathname; };
-  const sb = $('sixBtn'); sb.textContent = NB === 6 ? '🎰 Passer à 3 roues' : '🎰 Passer à 6 roues'; sb.onclick = () => { location.href = location.pathname + (NB === 6 ? '?triple' : '?six'); };
   setInterval(() => {
     const rs = frames.map(R);
     spinBtn.disabled = !all.length || rs.some(r => !r || !(r.etat() === 'idle' || r.etat() === 'done'));
