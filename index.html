@@ -100,6 +100,21 @@
   .row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 10px; border-bottom:1px solid #1f2535; font-size:14px; }
   .row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .row button { padding:5px 10px; font-size:13px; flex:none; }
+  .box.wide { width:min(1180px, 96vw); height:auto; max-height:94vh; }
+  .dexbar { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; font-size:14px; }
+  #dexGrid { flex:none; overflow:auto; display:grid; grid-template-columns:repeat(10, 1fr); overflow-y:auto; gap:6px; align-content:start; }
+  .dcard { background:#1a1f2c; border:1px solid #2a3042; border-radius:8px; padding:8px 4px; text-align:center; font-size:14px; min-width:0; display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .dcard .dimg { width:100%; aspect-ratio:1.25; display:flex; align-items:center; justify-content:center; }
+  .dcard img { max-width:100%; max-height:100%; object-fit:contain; }
+  .dcard.off img { filter:brightness(0); opacity:.3; }
+  .dcard.off .dn { opacity:.5; }
+  .dcard.sh { border-color:#ffd84a; }
+  .dcard .dnum { opacity:.85; font-size:15px; font-weight:700; letter-spacing:.5px; }
+  .dcard .dn { font-weight:700; font-size:14px; width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dcard small { opacity:.9; font-size:14px; font-weight:700; color:#ffd84a; }
+  #dexGrid .empty { grid-column:1 / -1; }
+  @media (max-width:1000px) { #dexGrid { grid-template-columns:repeat(6, 1fr); } }
+  @media (max-width:640px) { #dexGrid { grid-template-columns:repeat(3, 1fr); } }
   .htabs { display:flex; gap:6px; margin-bottom:8px; }
   .htabs button { flex:1; padding:8px 10px; border-radius:8px; border:1px solid #2a3042; background:transparent; color:inherit; cursor:pointer; font:inherit; }
   .htabs button.on { background:#2a3042; border-color:#ffd84a; }
@@ -289,6 +304,7 @@
   <button id="tripleBtn" onclick="location.href=location.pathname+'?triple'">🎰 3 tirages simultanés</button>
   <button id="sixBtn" onclick="location.href=location.pathname+'?six'">🎰 6 tirages simultanés</button>
   <button id="histBtn">📜 Historique des tirages</button>
+  <button id="dexBtn">📖 Pokédex</button>
   <button id="manageMem">🗂 Gérer la mémoire</button>
   <button id="resetMem">↺ Réinitialiser la mémoire</button>
   <div class="social">
@@ -324,6 +340,21 @@
     <div class="htabs"><button id="tabAll" class="on">Tous les tirages</button><button id="tabShiny">✨ Shinys <span id="shinyCount"></span></button></div>
     <div id="histList"></div>
     <div class="mfoot"><span style="display:flex;gap:8px"><button id="histCopy">Copier la liste</button><button id="histClear">Effacer</button></span><span id="histNote"></span></div>
+  </div>
+</div>
+
+<div id="dex" class="modal hidden">
+  <div class="box wide">
+    <div class="mhead"><strong>Pokédex</strong><button id="dexClose">✕</button></div>
+    <div class="dexbar">
+      <label class="chk" style="border:0;padding:0"><input type="checkbox" id="dexShiny"><span>✨ Afficher le Pokédex shiny (uniquement ceux obtenus)</span></label>
+      <span id="dexCount"></span>
+    </div>
+    <div id="dexGrid"></div>
+    <div class="mfoot">
+      <span style="display:flex;gap:8px;align-items:center"><button id="dexPrev">◀</button><span id="dexPage"></span><button id="dexNext">▶</button></span>
+      <button id="dexReset">Réinitialiser le Pokédex</button>
+    </div>
   </div>
 </div>
 
@@ -578,7 +609,7 @@ function finish() {
     stage.classList.add('done');
     state = 'done'; fanfare();
     burst(); if (win.shiny) { setTimeout(burst, 350); setTimeout(burst, 800); }
-    if (CHILD) { try { window.parent.tripleWin(win.name, win.entry.id); } catch (e) {} }   // historique + mémoire gérés par la page parente
+    if (CHILD) { try { window.parent.tripleWin(win.name, win.entry.id, win.shiny ? win.src : null); } catch (e) {} }   // historique + mémoire gérés par la page parente
     else addHistory(win);
     if (!CHILD && $('remove').checked) {
       all = all.filter(e => e !== win.entry);
@@ -761,7 +792,64 @@ try { shinyHist = JSON.parse(localStorage.getItem(SHINY_KEY) || '[]'); } catch (
 function saveShinyHist() { try { localStorage.setItem(SHINY_KEY, JSON.stringify(shinyHist)); } catch (e) {} }
 let histTab = 'all';
 const curHist = () => histTab === 'shiny' ? shinyHist : history;
+// ---- Pokédex : pokémons obtenus (conservé entre les visites) ----
+const DEX_KEY = 'roulette_pokedex', DEX_PER = 30;
+let dex = {};
+try { const d = JSON.parse(localStorage.getItem(DEX_KEY) || '{}'); if (d && typeof d === 'object') dex = d; } catch (e) {}
+function saveDex() { try { localStorage.setItem(DEX_KEY, JSON.stringify(dex)); } catch (e) {} }
+function recordDex(id, shiny, src) {
+  if (!id) return;
+  const d = dex[id] || (dex[id] = { n: 0, s: 0 });
+  if (shiny) { d.s++; if (src) d.f = src; } else d.n++;
+  saveDex();
+  if (!$('dex').classList.contains('hidden')) renderDex();
+}
+let dexPage = 0;
+const dexPretty = n => n.replace(/^\s*\d+\s*-?\s*/, '').replace(/(^|[\s'-])([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase());
+function dexImg(e) { if (e.file) { const u = URL.createObjectURL(e.file); objectUrls.push(u); return u; } return e.src; }
+function renderDex() {
+  const shiny = $('dexShiny').checked, grid = $('dexGrid'); grid.innerHTML = '';
+  const caught = fullList.filter(e => dex[e.id] && (dex[e.id].n || dex[e.id].s)).length;
+  const sh = fullList.filter(e => dex[e.id] && dex[e.id].s).length;
+  $('dexCount').textContent = caught + ' / ' + fullList.length + ' obtenus · ✨ ' + sh + ' shiny(s)';
+  const list = shiny ? fullList.filter(e => dex[e.id] && dex[e.id].s) : fullList;
+  const pages = Math.max(1, Math.ceil(list.length / DEX_PER));
+  dexPage = Math.min(Math.max(dexPage, 0), pages - 1);
+  if (!list.length) {
+    const d = document.createElement('div'); d.className = 'empty';
+    d.textContent = !fullList.length ? "Liste non chargée" : "Aucun shiny obtenu pour l'instant";
+    grid.appendChild(d);
+  }
+  list.slice(dexPage * DEX_PER, (dexPage + 1) * DEX_PER).forEach(e => {
+    const d = dex[e.id], got = !!(d && (d.n || d.s));
+    const card = document.createElement('div'); card.className = 'dcard' + (shiny ? ' sh' : '') + (got ? '' : ' off');
+    const num = document.createElement('div'); num.className = 'dnum'; num.textContent = '#' + ((e.name.match(/^\s*(\d+)/) || [])[1] || '?');
+    const box = document.createElement('div'); box.className = 'dimg';
+    const img = new Image(); img.alt = ''; img.loading = 'lazy'; img.src = shiny && d.f ? d.f : dexImg(e); img.onerror = () => { if (shiny) img.src = dexImg(e); };
+    box.appendChild(img);
+    const nm = document.createElement('div'); nm.className = 'dn'; nm.textContent = got ? dexPretty(e.name) : '???';
+    card.appendChild(num); card.appendChild(box); card.appendChild(nm);
+    if (got) { const c = document.createElement('small'); c.textContent = shiny ? '×' + d.s : '×' + (d.n + d.s); card.appendChild(c); }
+    grid.appendChild(card);
+  });
+  $('dexPage').textContent = 'Page ' + (dexPage + 1) + ' / ' + pages;
+  $('dexPrev').disabled = dexPage <= 0; $('dexNext').disabled = dexPage >= pages - 1;
+  grid.scrollTop = 0;
+}
+function openDex() { closeSheet(); $('dex').classList.remove('hidden'); renderDex(); }
+function closeDex() { $('dex').classList.add('hidden'); }
+$('dexBtn').onclick = openDex;
+$('dexClose').onclick = closeDex;
+$('dex').addEventListener('mousedown', e => { if (e.target === $('dex')) closeDex(); });
+$('dexShiny').onchange = () => { dexPage = 0; renderDex(); };
+$('dexPrev').onclick = () => { dexPage--; renderDex(); };
+$('dexNext').onclick = () => { dexPage++; renderDex(); };
+$('dexReset').onclick = () => {
+  if (!confirm("Es-tu sûr de vouloir réinitialiser le Pokédex ?\n\nTous les pokémons obtenus, y compris les shinys, seront effacés. Cette action est définitive.")) return;
+  dex = {}; saveDex(); dexPage = 0; renderDex();
+};
 function addHistory(win) {
+  if (win.entry) recordDex(win.entry.id, SHINY_RE.test(win.name), win.shiny ? win.src : null);
   const rec = { n: win.name, t: Date.now() };
   history.unshift(rec);
   if (history.length > HIST_MAX) history.length = HIST_MAX;
@@ -824,6 +912,7 @@ spinBtn.onclick = () => { closeSheet(); spin(); };
 addEventListener('keydown', e => {
   if (!$('mem').classList.contains('hidden')) { if (e.key === 'Escape') closeMem(); return; }  // fenêtre mémoire ouverte
   if (!$('tri').classList.contains('hidden')) { if (e.key === 'Escape') closeTri(); return; }
+  if (!$('dex').classList.contains('hidden')) { if (e.key === 'Escape') closeDex(); return; }
   if (!$('hist').classList.contains('hidden')) { if (e.key === 'Escape') closeHist(); return; } // fenêtre historique ouverte
   if (e.code === 'Space') { e.preventDefault(); if (!spinBtn.disabled) spin(); }
   if (e.key.toLowerCase() === 'h') { $('panel').classList.toggle('hidden'); fit(); }
@@ -1198,8 +1287,9 @@ if (TRIPLE) {
     }
     rs.forEach((r, i) => r.tirer(win[i]));
   };
-  window.tripleWin = (name, id) => {
+  window.tripleWin = (name, id, src) => {
     addHistory({ name });
+    recordDex(id, SHINY_RE.test(name), src);
     if ($('remove').checked) { removed.add(id); saveRemoved(); refreshAfterMem(); }
   };
   window.__t3sound = () => { const r = R(frames[0]); if (r && r.son) r.son(!muted); };
