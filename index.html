@@ -159,6 +159,18 @@
   .row button { padding:5px 10px; font-size:13px; flex:none; }
   .box.wide { width:min(1180px, 96vw); height:auto; max-height:94vh; }
   .dexbar { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; font-size:14px; }
+  #deblList { overflow:auto; display:flex; flex-direction:column; gap:8px; max-height:72vh; padding-right:4px; }
+  .drow { display:flex; gap:14px; align-items:center; background:#1a1f2c; border:1px solid #2a3042; border-radius:10px; padding:10px 14px; }
+  .drow img { width:64px; height:64px; object-fit:contain; flex:none; }
+  .drow.verrou img { filter:brightness(0); opacity:.45; }
+  .drow .dnom { width:220px; flex:none; font-weight:800; font-size:15px; } .drow .dnom small { display:block; font-weight:600; opacity:.65; font-size:12px; margin-top:2px; }
+  .drow .dtaches { flex:1; display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .dtache { display:grid; grid-template-columns:minmax(120px, 260px) 1fr 90px; gap:10px; align-items:center; font-size:13px; }
+  .dtache .dbar { height:10px; border-radius:5px; background:#2a3042; overflow:hidden; } .dtache .dbar i { display:block; height:100%; background:linear-gradient(90deg, #5a7bd8, #8fb0ff); }
+  .dtache.ok .dbar i { background:linear-gradient(90deg, #2f9d55, #6ee08f); } .dtache b { text-align:right; font-weight:700; }
+  .drow.fini { border-color:#2f7d4a; background:linear-gradient(135deg, #14261b, #1a1f2c 60%); }
+  .dsep { margin:8px 2px 0; font-weight:800; opacity:.8; }
+  @media (max-width:640px) { .drow { flex-wrap:wrap; } .drow .dnom { width:auto; flex:1; } .drow .dtaches { flex-basis:100%; } .dtache { grid-template-columns:1fr 70px; } .dtache .dbar { grid-column:1 / -1; grid-row:2; } }
   #dexSearch, #dexType { padding:6px 10px; border-radius:8px; border:1px solid #2a3042; background:#1a1f2b; color:inherit; font:inherit; }
   #dexSearch { width:190px; } #dexType, #succFiltre { cursor:pointer; }
   #succFiltre { padding:6px 10px; border-radius:8px; border:1px solid #2a3042; background:#1a1f2b; color:inherit; font:inherit; }
@@ -485,6 +497,7 @@
   <div class="nbsel"><span>🎰 Nombre de tirages</span><div id="nbSel"><button data-n="1">1</button><button data-n="3">3</button><button data-n="6">6</button></div></div>
   <button id="histBtn">📜 Historique des tirages</button>
   <button id="dexBtn">📖 Pokédex</button>
+  <button id="deblBtn">🔓 Pokémons à débloquer</button>
   <div class="btnrow"><button id="calBtn">📅 Shinys boostés</button><button id="yearBtn">🗓️ Calendrier</button></div>
   <button id="manageMem" style="display:none">🗂 Gérer la mémoire</button>
   <button id="resetMem" style="display:none">↺ Réinitialiser la mémoire</button>
@@ -550,6 +563,13 @@
   </div>
 </div>
 <!-- fiche d'un pokémon (clic sur une case du Pokédex) -->
+<div id="debl" class="modal hidden">
+  <div class="box wide">
+    <div class="mhead"><strong>🔓 Pokémons à débloquer</strong><button id="deblClose">✕</button></div>
+    <div class="dexbar"><span>Les tâches à accomplir pour chaque Pokémon ou forme verrouillé. Ceux déjà débloqués sont en bas de la liste.</span><span id="deblCount"></span></div>
+    <div id="deblList"></div>
+  </div>
+</div>
 <div id="fiche" class="modal hidden">
   <div class="box fiche">
     <div class="mhead"><strong id="ficheTitre"></strong><button id="ficheClose">✕</button></div>
@@ -1574,6 +1594,71 @@ function renderDex() {
   grid.scrollTop = 0;
   if (grid.offsetHeight > 100) dexGridH = grid.offsetHeight;
 }
+// ---- Pokémons à débloquer : une barre par tâche ----
+function tachesDe(e) {
+  const d = dexStocke(), obt = numerosObtenus(d), f = fileInfo(e), id = e.id, T = [];
+  const nom = x => dexPretty(cleanName(x)), oui = x => dejaObtenu(x) ? 1 : 0, t = (lib, c, m) => T.push({ lib, c: Math.min(c, m), m });
+  if (MEGA_DEBLOCAGE[id]) {
+    if (/darkrai/.test(id)) { t('Obtenir Méga-Floette (Fleur Éternelle)', megaObtenu('0670 - floette fleur éternelle méga.gif') ? 1 : 0, 1); t('Obtenir Darkrai', oui('0491 - darkrai.gif'), 1); }
+    else t('Obtenir Zygarde Forme Parfaite', oui('0718 - zygarde forme parfaite.gif'), 1);
+    return T;
+  }
+  if (/ infinimax$/i.test(e.name)) {
+    let M = {}; try { M = JSON.parse(localStorage.getItem('roulette_megadex') || '{}') || {}; } catch (er) {}
+    const L = MEGA_LIST.filter(x => / gigamax$/i.test(x.name)); t('Compléter le Giga Dex', L.filter(x => M[x.id] && (M[x.id].n || M[x.id].s)).length, L.length); return T;
+  }
+  const c = DEBLOCAGE[id];
+  if (c) {
+    if (typeof c === 'function') { for (let g = 1; g <= 7; g++) { const r = GEN_RANGES[g - 1], ex = new Set(fullList.map(x => fileInfo(x).n)); let a = 0, m = 0; for (let k = r[0]; k <= r[1]; k++) if (ex.has(k)) { m++; if (obt.has(k)) a++; } t('Pokédex de ' + GEN_NAMES[g - 1], a, m); } return T; }
+    if (Array.isArray(c)) { c.forEach(x => t('Obtenir ' + nom(x), oui(x), 1)); return T; }
+    if (/zygarde/.test(id)) { t('Obtenir Zygarde', nbObtenu('0718 - zygarde.gif'), 2); t('Obtenir Zygarde Forme 10%', oui('0718 - zygarde forme 10%.gif'), 1); }
+    else if (/hoopa/.test(id)) t('Obtenir Hoopa', nbObtenu('0720 - hoopa.gif'), 2);
+    else if (/zarude/.test(id)) { t('Obtenir Zarude', oui('0893 - zarude.gif'), 1); t('Obtenir les bébés Pokémon', BEBES.filter(n => obt.has(n)).length, BEBES.length); }
+    return T;
+  }
+  const V = VERROUS[f.n]; if (!V) return T;
+  if (f.n === 808) t('Effectuer des tirages', nbTirages(d), 1000);
+  else if (f.n === 809) t('Obtenir Meltan', nbObtenu('0808 - meltan.gif', d), 4);
+  else if (f.n === 386) t('Obtenir Méga-Rayquaza', megaObtenu('0384 - rayquaza méga.gif') ? 1 : 0, 1);
+  else if (f.n === 1000) { t('Effectuer des tirages', nbTirages(d), 100); t('Obtenir les 2 formes de Mordudor', ['0999 - mordudor.gif', '0999 - mordudor forme marche.gif'].filter(x => nbObtenu(x, d)).length, 2); }
+  const ex = new Set(fullList.map(x => fileInfo(x).n));
+  for (const [a, b] of V.plages || []) {
+    let o = 0, m = 0; for (let k = a; k <= b; k++) if (k !== f.n && ex.has(k)) { m++; if (obt.has(k)) o++; }
+    const g = GEN_RANGES.findIndex(r => a >= r[0] && b <= r[1]);
+    t(a === 899 ? 'Pokémon de Hisui (n°899 à 905)' : 'Pokédex de ' + GEN_NAMES[g], o, m);
+  }
+  if (V.hisui) { const L = fullList.filter(x => fileInfo(x).form === 'hisui'); t('Formes de Hisui', L.filter(x => d[x.id] && (d[x.id].n || d[x.id].s)).length, L.length); }
+  for (const k of V.liste || []) { const x = fullList.find(y => fileInfo(y).n === k && !fileInfo(y).form); t('Obtenir ' + (x ? nom(x.id) : '#' + k), obt.has(k) ? 1 : 0, 1); }
+  return T;
+}
+function renderDebl() {
+  const ids = new Set([...Object.keys(VERROUS).map(n => (fullList.find(x => fileInfo(x).n === +n && !fileInfo(x).form) || {}).id), ...Object.keys(DEBLOCAGE), ...Object.keys(MEGA_DEBLOCAGE),
+    ...MEGA_LIST.filter(x => / infinimax$/i.test(x.name)).map(x => x.id)].filter(Boolean));
+  const tous = [...fullList, ...FORM_LIST, ...MEGA_LIST];
+  const rang = e => MEGA_LIST.includes(e) ? 2 : e.alt ? 1 : 0;
+  const L = [...ids].map(id => tous.find(x => x.id === id)).filter(Boolean).map(e => { const T = tachesDe(e); return { e, T, ok: T.length > 0 && T.every(x => x.c >= x.m) }; })
+    .sort((a, b) => (a.ok - b.ok) || (fileInfo(a.e).n - fileInfo(b.e).n) || (rang(a.e) - rang(b.e)) || a.e.id.localeCompare(b.e.id));   // le pokémon, puis ses formes, puis ses méga
+  const box = $('deblList'); box.innerHTML = '';
+  $('deblCount').textContent = L.filter(x => x.ok).length + ' / ' + L.length + ' débloqués';
+  let sep = false;
+  L.forEach(({ e, T, ok }) => {
+    if (ok && !sep) { sep = true; const h = document.createElement('div'); h.className = 'dsep'; h.textContent = '✔ Déjà débloqués'; box.appendChild(h); }
+    const r = document.createElement('div'); r.className = 'drow' + (ok ? ' fini' : '') + (dejaObtenu(e.id) || megaObtenu(e.id) ? '' : ' verrou');
+    const im = new Image(); im.loading = 'lazy'; im.alt = ''; im.src = e.src || '';
+    const n = document.createElement('div'); n.className = 'dnom';
+    n.innerHTML = '#' + ((e.name.match(/^\s*(\d+)/) || [])[1] || '?') + ' ' + dexPretty(e.name) + '<small>' + (ok ? '✔ Débloqué' : '🔒 ' + T.filter(x => x.c >= x.m).length + ' / ' + T.length + ' tâche(s) terminée(s)') + '</small>';
+    const tt = document.createElement('div'); tt.className = 'dtaches';
+    T.forEach(x => {
+      const l = document.createElement('div'); l.className = 'dtache' + (x.c >= x.m ? ' ok' : '');
+      l.innerHTML = '<span>' + (x.c >= x.m ? '✔ ' : '') + x.lib + '</span><span class="dbar"><i style="width:' + Math.round(100 * x.c / x.m) + '%"></i></span><b>' + x.c + ' / ' + x.m + '</b>';
+      tt.appendChild(l);
+    });
+    r.appendChild(im); r.appendChild(n); r.appendChild(tt); box.appendChild(r);
+  });
+}
+$('deblBtn').onclick = () => { closeSheet(); $('debl').classList.remove('hidden'); renderDebl(); $('deblList').scrollTop = 0; };
+$('deblClose').onclick = () => $('debl').classList.add('hidden');
+$('debl').addEventListener('mousedown', ev => { if (ev.target === $('debl')) $('debl').classList.add('hidden'); });
 function openDex() { closeSheet(); $('dex').classList.remove('hidden'); renderDex(); }
 function closeDex() { $('dex').classList.add('hidden'); }
 $('dexBtn').onclick = openDex;
