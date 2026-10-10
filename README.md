@@ -16,8 +16,22 @@ Le dossier doit contenir :
 - `liste.js`
 - le dossier `allpokemon` (les images)
 - le dossier `allpokemonshiny` (les variantes shiny, nommées `0001 - bulbizarre shiny.gif`)
+- `liste_formes.js`
+- le dossier `allformealternative` (méga, Primo et autres formes, nommées `0006 - dracaufeu méga x.gif`)
+- le dossier `allformealternativeshiny` (leurs shiny, nommés `0006 - dracaufeu méga x shiny.gif`)
 
-Si tu modifies le contenu de `allpokemon` (ajout ou retrait d'images), **double-clique sur `creer_liste.bat`** pour mettre `liste.js` à jour.
+Si tu modifies le contenu de `allpokemon`, `allformealternative` ou `allformealternativeshiny` (ajout ou retrait d'images), **double-clique sur `creer_liste.bat`** pour mettre `liste.js` et `liste_formes.js` à jour.
+
+Les formes alternatives ne sont pas tirées directement : quand un Pokémon est tiré, **sa forme est choisie** au résultat.
+- Par défaut, chaque forme a la même chance que la forme de base (mâle / femelle, motifs de Prismillon, races de Tauros de Paldea…).
+- Pikachu et Évoli : 10 % de chance d'être une de leurs variantes. Zarude Papa et Shaymin Céleste : 10 %. Deusolourdo forme Triple : 1 %.
+- Morphéo et Météno : 5 % pour chacune de leurs formes.
+- Vivaldaim et Haydaim : la forme de la saison en cours.
+- À débloquer : Kyurem Noir / Blanc (avoir obtenu Kyurem, Reshiram et Zekrom), Sylveroy cavaliers (Sylveroy, Blizzeval et Spectreval), Necrozma Crinière du Couchant / Ailes de l'Aurore (Necrozma, Solgaleo et Lunala), Ultra-Necrozma (avoir obtenu les deux formes de Necrozma).
+
+Le Pokédex contient les Pokémon et toutes leurs formes.
+
+Les **méga** (et Primo / Sacha) ne sont pas tirées directement : quand le Pokémon tiré a une méga, il a **10 % de chance de méga-évoluer** au résultat (la carte se retourne et révèle la méga). Un shiny ne méga-évolue que si la méga existe en shiny. Avec le filtre Pokémon Champions, seule une méga autorisée dans le règlement coché peut sortir (ex. Raichu est autorisé dès M-A, mais ses Méga X / Y seulement à partir de M-B). Les méga obtenues sont rangées dans le **💠 Méga Dex** (case à cocher dans le Pokédex).
 
 ## 2. Ajouter la roulette dans OBS
 
@@ -55,6 +69,7 @@ Exemple : `file:///D:/scene%20OBS/roulette/index.html?overlay&cache=1&duree=8`
 | `theme=rouge` | Thème : `default`, `rouge`, `vert`, `violet`, `jaune`, `rose`, `turquoise` |
 | `fond=vert` | Fond uni : `vert`, `bleu`, `noir`, `blanc`, un code hexa (`ff00ff`) ou `theme` (fond animé) |
 | `deco=1` | Rayons et bulles sur fond transparent |
+| `mega=N` | Chance de méga-évolution au résultat : `N` % (défaut `10`). `mega=0` désactive les méga |
 | `shiny=N` | Chance d'obtenir la version shiny : 1 sur `N` (défaut `2048`). `shiny=0` désactive les shinys |
 | `debug=1` | Ligne verte de diagnostic en haut de l'écran (à retirer ensuite) |
 
