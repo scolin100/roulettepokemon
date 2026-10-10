@@ -1234,7 +1234,7 @@ function recordMegaDex(id, shiny, src) {
   if (!id) return;
   const d = megaDex[id] || (megaDex[id] = { n: 0, s: 0, t: Date.now() });   // t : date de la 1re capture
   if (shiny) { d.s++; if (src) d.f = src; if (!d.ts) d.ts = Date.now(); } else d.n++;
-  saveMegaDex(); verifierSucces();
+  saveMegaDex(); verifierSucces(); if (shiny) majThemeShiny();
   if (!$('dex').classList.contains('hidden')) renderDex();
 }
 function recordDex(id, shiny, src) {
@@ -1246,7 +1246,7 @@ function recordDex(id, shiny, src) {
     st.serie = shiny ? 0 : (st.serie || 0) + 1; st.max = Math.max(st.max || 0, st.serie);
     localStorage.setItem('roulette_stats', JSON.stringify(st));
   } catch (e) {}
-  saveDex(); verifierSucces();
+  saveDex(); verifierSucces(); if (shiny) majThemeShiny();
   verifierVerrous();                  // Mew, Celebi, Arceus… peuvent se débloquer
   if (!$('dex').classList.contains('hidden')) renderDex();
 }
@@ -2100,6 +2100,20 @@ if (!TEST) ['halloween', 'noel'].forEach(v => {      // visibles dans la liste u
   if (autoTheme() !== v) { const o = $('themeSel').querySelector('option[value="' + v + '"]'); if (o) o.remove(); }
 });
 $('themeSel').value = themeChoice;
+// thème Shiny : verrouillé tant qu'aucun shiny n'a été obtenu (Pokédex, Méga Dex ou Giga Dex)
+function shinyObtenu() {
+  try { return ['roulette_pokedex', 'roulette_megadex'].some(k => Object.values(JSON.parse(localStorage.getItem(k) || '{}') || {}).some(x => x && x.s > 0)); } catch (e) { return false; }
+}
+let _shinyDebloque = null;
+function majThemeShiny() {
+  const o = $('themeSel').querySelector('option[value="shiny"]'); if (!o) return;
+  const ok = TEST || shinyObtenu();
+  o.disabled = !ok; o.textContent = ok ? 'Shiny ✨' : 'Shiny 🔒 (obtiens un shiny)';
+  if (!ok && themeChoice === 'shiny') { themeChoice = 'auto'; $('themeSel').value = 'auto'; applyTheme(); }
+  if (ok && _shinyDebloque === false && !OV && !CHILD) toastSucces({ ico: '✨', nom: 'Thème Shiny débloqué !' });   // premier shiny de la session
+  _shinyDebloque = ok;
+}
+majThemeShiny();
 $('themeSel').onchange = e => {
   themeChoice = e.target.value;
   try { localStorage.setItem(THEME_KEY, themeChoice); } catch (err) {}
