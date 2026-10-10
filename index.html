@@ -123,7 +123,9 @@
   .dcard .dnum { opacity:.85; font-size:15px; font-weight:700; letter-spacing:.5px; }
   .dcard .dn { font-weight:700; font-size:14px; width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .dcard small { opacity:.9; font-size:14px; font-weight:700; color:#ffd84a; }
-  #dexGrid .empty { grid-column:1 / -1; }
+  #dexGrid { position:relative; }
+  #dexGrid .empty { position:absolute; left:0; right:0; top:40%; text-align:center; }
+  #dexGrid .dcard.vide { visibility:hidden; }
   @media (max-width:1000px) { #dexGrid { grid-template-columns:repeat(6, 1fr); } }
   @media (max-width:640px) { #dexGrid { grid-template-columns:repeat(3, 1fr); } }
   .nbsel { display:flex; flex-direction:column; align-items:stretch; gap:6px; font-size:14px; }
@@ -1151,9 +1153,16 @@ function renderDex() {
         card.style.background = 'linear-gradient(rgba(10,12,20,.28), rgba(10,12,20,.28)), linear-gradient(135deg, ' + c1 + ' 0 50%, ' + c2 + ' 50% 100%)';
       }
     }
-    if (got) { const c = document.createElement('small'); c.textContent = shiny ? '×' + d.s : '×' + (d.n + d.s); card.appendChild(c); }
+    const c = document.createElement('small');   // toujours présent (vide si pas obtenu) : toutes les cases ont la même hauteur
+    c.textContent = got ? (shiny ? '×' + d.s : '×' + (d.n + d.s)) : '\u00a0'; card.appendChild(c);
     grid.appendChild(card);
   });
+  // cases invisibles pour compléter la page : toutes les pages ont la même taille
+  for (let k = grid.querySelectorAll('.dcard').length; k < DEX_PER; k++) {
+    const g = document.createElement('div'); g.className = 'dcard vide';
+    g.innerHTML = '<div class="dnum">&nbsp;</div><div class="dimg"></div><div class="dn">&nbsp;</div><small>&nbsp;</small>';
+    grid.appendChild(g);
+  }
   $('dexPage').textContent = 'Page ' + (dexPage + 1) + ' / ' + pages;
   $('dexPrev').disabled = dexPage <= 0; $('dexNext').disabled = dexPage >= pages - 1;
   grid.scrollTop = 0;
