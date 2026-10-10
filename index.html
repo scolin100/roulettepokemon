@@ -115,6 +115,11 @@
   .dcard.off img { filter:brightness(0); opacity:.3; }
   .dcard.off .dn { opacity:.5; }
   .dcard.sh { border-color:#ffd84a; }
+  /* pokémon obtenu : fond aux couleurs de son type (1er type en haut à gauche, 2e type en bas à droite) */
+  .dcard.typed { border-color:rgba(255,255,255,.18); }
+  .dcard.typed.sh { border-color:#ffd84a; }
+  .dcard.typed .dnum, .dcard.typed .dn, .dcard.typed small { text-shadow:0 1px 2px #000, 0 0 4px rgba(0,0,0,.7); }
+  .dcard.typed img { filter:drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
   .dcard .dnum { opacity:.85; font-size:15px; font-weight:700; letter-spacing:.5px; }
   .dcard .dn { font-weight:700; font-size:14px; width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .dcard small { opacity:.9; font-size:14px; font-weight:700; color:#ffd84a; }
@@ -466,6 +471,7 @@
 <script src="liste.js"></script>
 <!-- liste_formes.js est aussi généré par creer_liste.bat (formes alternatives : méga, formes, variantes… et leurs shiny) -->
 <script src="liste_formes.js"></script>
+<script src="types.js"></script>   <!-- types de chaque pokémon / forme : couleur des cases du Pokédex -->
 <script>
 // ====== RÉGLAGES ======
 const W = 1080, H = 1920;
@@ -1107,6 +1113,8 @@ function recordDex(id, shiny, src) {
 let dexPage = 0;
 const dexPretty = n => n.replace(/^\s*\d+\s*-?\s*/, '').replace(/(^|[\s'-])([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase()).replace(/ D'/g, " d'").replace(/ (De|Du|Des|Le|La) /g, m => m.toLowerCase());
 function dexImg(e) { if (e.file) { const u = URL.createObjectURL(e.file); objectUrls.push(u); return u; } return e.src; }
+const TYPE_COUL = { normal:'#A8A77A', fire:'#EE8130', water:'#6390F0', electric:'#F7D02C', grass:'#7AC74C', ice:'#96D9D6', fighting:'#C22E28', poison:'#A33EA1',
+  ground:'#E2BF65', flying:'#A98FF3', psychic:'#F95587', bug:'#A6B91A', rock:'#B6A136', ghost:'#735797', dragon:'#6F35FC', dark:'#705746', steel:'#B7B7CE', fairy:'#D685AD' };
 function renderDex() {
   const shiny = $('dexShiny').checked, grid = $('dexGrid'); grid.innerHTML = '';
   const mega = $('dexMega').checked, dex = mega ? megaDex : window.__dexNormal();   // Méga Dex ou Pokédex
@@ -1135,6 +1143,14 @@ function renderDex() {
     box.appendChild(img);
     const nm = document.createElement('div'); nm.className = 'dn'; nm.textContent = got ? dexPretty(e.name) : '???';
     card.appendChild(num); card.appendChild(box); card.appendChild(nm);
+    if (got) {                                   // fond aux couleurs du ou des types
+      const T = window.POKEMON_TYPES || {}, ty = T[e.id] || (e.parent && T[e.parent]);
+      if (ty && ty.length) {
+        const c1 = TYPE_COUL[ty[0]] || '#555', c2 = TYPE_COUL[ty[1] || ty[0]] || c1;
+        card.classList.add('typed');
+        card.style.background = 'linear-gradient(rgba(10,12,20,.28), rgba(10,12,20,.28)), linear-gradient(135deg, ' + c1 + ' 0 50%, ' + c2 + ' 50% 100%)';
+      }
+    }
     if (got) { const c = document.createElement('small'); c.textContent = shiny ? '×' + d.s : '×' + (d.n + d.s); card.appendChild(c); }
     grid.appendChild(card);
   });
