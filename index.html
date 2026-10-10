@@ -482,7 +482,9 @@ const FORM_LIST = [], FORMS_OF = {};   // toutes les autres formes · formes de 
 // ---- choix de la forme du pokémon tiré ----
 // par défaut : chaque forme a la même chance que la forme de base (mâle / femelle, motifs de Prismillon, races de Tauros de Paldea…)
 const FORME_PART = {                    // toutes les formes se partagent ce pourcentage
-  '0025 - pikachu.gif': 0.10, '0133 - évoli.gif': 0.10, '0982 - deusolourdo.gif': 0.01, '0893 - zarude.gif': 0.10, '0492 - shaymin.gif': 0.10, '0720 - hoopa.gif': 0.10, '0658 - amphinobi.gif': 0.10 };   // Amphinobi Sacha : 10 %
+  '0025 - pikachu.gif': 0.10, '0133 - évoli.gif': 0.10, '0982 - deusolourdo.gif': 0.01, '0893 - zarude.gif': 0.10, '0492 - shaymin.gif': 0.10, '0720 - hoopa.gif': 0.10, '0658 - amphinobi.gif': 0.10,   // Amphinobi Sacha : 10 %
+  '0493 - arceus.gif': 0.50, '0773 - silvallié.gif': 0.50,       // Arceus / Silvallié : 50 % de base, les types se partagent 50 %
+  '0648 - meloetta.gif': 0.10, '0647 - keldeo.gif': 0.10, '0172 - pichu.gif': 0.10 };   // + Pichu troizépi : 10 %       // Meloetta forme Danse, Keldeo forme Décidée : 10 %
 const FORME_CHAQUE = { '0351 - morphéo.gif': 0.05, '0774 - météno.gif': 0.05 };   // chaque forme a ce pourcentage
 const FORME_SAISON = new Set(['0585 - vivaldaim.gif', '0586 - haydaim.gif']);      // forme selon la saison
 // formes à débloquer : il faut avoir déjà obtenu ces pokémons (Pokédex)
@@ -493,11 +495,19 @@ const DEBLOCAGE = {
   '0646 - kyurem noir.gif': KYUREM_REQ, '0646 - kyurem blanc.gif': KYUREM_REQ,
   '0898 - sylveroy cavalier du froid.gif': SYLVEROY_REQ, "0898 - sylveroy cavalier d'effroi.gif": SYLVEROY_REQ,
   '0800 - necrozma crinière du couchant.gif': NECROZMA_REQ, "0800 - necrozma ailes de l'aurore.gif": NECROZMA_REQ,
-  '0800 - necrozma ultra.gif': ['0800 - necrozma crinière du couchant.gif', "0800 - necrozma ailes de l'aurore.gif"] };
+  '0800 - necrozma ultra.gif': ['0800 - necrozma crinière du couchant.gif', "0800 - necrozma ailes de l'aurore.gif"],
+  '0647 - keldeo forme décidée.gif': ['0638 - cobaltium.gif', '0639 - terrakium.gif', '0640 - viridium.gif', '0647 - keldeo.gif'],
+  '0801 - magearna couleur du passé.gif': () => [1, 2, 3, 4, 5, 6, 7].every(regionComplete) };   // Pokédex de Kanto à Alola complets
 function dejaObtenu(id) {               // relu à chaque fois (le Pokédex est partagé entre les roues)
   try { const d = JSON.parse(localStorage.getItem('roulette_pokedex') || '{}')[id]; return !!(d && (d.n || d.s)); } catch (e) { return false; }
 }
-const formeDebloquee = f => (DEBLOCAGE[f.id] || []).every(dejaObtenu);
+const formeDebloquee = f => { const c = DEBLOCAGE[f.id]; return !c ? true : typeof c === 'function' ? c() : c.every(dejaObtenu); };
+// région complète (1 = Kanto … 7 = Alola) : chaque numéro de la génération obtenu au moins une fois
+function regionComplete(g) {
+  const r = GEN_RANGES[g - 1], obt = numerosObtenus(dexStocke()), ex = new Set(fullList.map(e => fileInfo(e).n));
+  for (let k = r[0]; k <= r[1]; k++) if (ex.has(k) && !obt.has(k)) return false;
+  return true;
+}
 function saisonActuelle(d = new Date()) {   // printemps 20 mars · été 21 juin · automne 23 sept · hiver 21 déc
   const md = (d.getMonth() + 1) * 100 + d.getDate();
   return md >= 1221 || md < 320 ? 'hiver' : md < 621 ? 'printemps' : md < 923 ? 'été' : 'automne';
@@ -1399,7 +1409,7 @@ function fileInfo(e) {
   const mega = mm ? (mm[1] || '') : null;
   // formes spéciales qu'on ne peut pas choisir dans Pokémon Champions : Pikachu à casquette / cosplay / partenaire,
   // formes météo de Morphéo, Morpeko affamé, Superdofin Super, Amphinobi Sacha, Primo
-  const special = !!e.alt && mega == null && (n === 25 || n === 133 || n === 351 || n === 877 || n === 964 || / (primo|sacha)$/.test(t));
+  const special = !!e.alt && mega == null && (n === 25 || n === 133 || n === 351 || n === 877 || n === 964 || / (primo|sacha|forme assaut|mode transe|forme banc|forme danse)$/.test(t));
   return (e._info = { n, form, mega, special });
 }
 function matchGen(e, gens, formGen) {
@@ -1420,12 +1430,12 @@ const CHAMP_FORMS = new Set(["128:paldea", "157:hisui", "199:galar", "26:alola",
 const CHAMP_A_BASE = new Set([3, 6, 9, 15, 18, 24, 25, 26, 36, 38, 59, 65, 68, 71, 80, 94, 115, 121, 127, 128, 130, 132, 134, 135, 136, 142, 143, 149, 154, 157, 160, 168, 181, 184, 186, 196, 197, 199, 205, 208, 212, 214, 227, 229, 248, 279, 282, 302, 306, 308, 310, 319, 323, 324, 334, 350, 351, 354, 358, 359, 362, 389, 392, 395, 405, 407, 409, 411, 428, 442, 445, 448, 450, 454, 460, 461, 464, 470, 471, 472, 473, 475, 478, 479, 497, 500, 503, 505, 510, 512, 514, 516, 530, 531, 534, 547, 553, 563, 569, 571, 579, 584, 587, 609, 614, 618, 623, 635, 637, 652, 655, 658, 660, 663, 666, 671, 675, 676, 678, 681, 683, 685, 693, 695, 697, 699, 700, 701, 702, 706, 707, 709, 711, 713, 715, 724, 727, 730, 733, 740, 745, 748, 750, 752, 758, 763, 765, 766, 778, 780, 784, 823, 841, 842, 844, 855, 858, 866, 867, 869, 877, 887, 899, 900, 902, 903, 908, 911, 914, 925, 934, 936, 937, 939, 952, 956, 959, 964, 968, 970, 981, 983, 1013, 1018, 1019]);
 const CHAMP_A_FORMS = new Set(['26:alola', '38:alola', '59:hisui', '80:galar', '128:paldea', '157:hisui', '199:galar', '503:hisui', '571:hisui', '618:galar', '706:hisui', '713:hisui', '724:hisui', '670:eternelle']);
 // ---- Méga-évolutions autorisées par règlement (numéro, ou « numéro:x » / « numéro:y ») ----
-// M-A : premier format. M-B ajoute 16 méga (Raichu X / Y alors que Raichu était déjà là en M-A, Dardargnan…). M-C en ajoute 3 (+ 3 méga Z sans image).
+// M-A : premier format. M-B ajoute 16 méga (Raichu X / Y alors que Raichu était déjà là en M-A, Dardargnan…). M-C en ajoute 3 + les 3 méga Z.
 const MEGA_A = new Set(['3', '6:x', '6:y', '9', '15', '18', '36', '65', '71', '80', '94', '115', '121', '127', '130', '142', '149', '154', '160', '181', '208', '212', '214',
   '227', '229', '248', '282', '302', '306', '308', '310', '319', '323', '334', '354', '358', '359', '362', '428', '445', '448', '460', '475', '478', '500', '530', '531',
   '609', '623', '652', '655', '658', '670', '678', '701', '740', '780', '952', '970']);
 const MEGA_B = new Set(['26:x', '26:y', '254', '257', '260', '303', '376', '398', '545', '560', '604', '668', '687', '689', '691', '870']);
-const MEGA_C = new Set(['373', '768', '998']);   // + Méga-Absol Z, Méga-Carchacrok Z, Méga-Lucario Z (pas d'image)
+const MEGA_C = new Set(['373', '768', '998', '359:z', '445:z', '448:z']);   // + Méga-Absol Z, Méga-Carchacrok Z, Méga-Lucario Z
 function megaOk(f, regle) {
   const k = f.n + (f.mega ? ':' + f.mega : '');
   return MEGA_A.has(k) || (regle !== 'A' && MEGA_B.has(k)) || (regle === 'C' && MEGA_C.has(k));
