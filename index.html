@@ -470,10 +470,12 @@
 </div>
 
 <!-- liste.js est généré par creer_liste.bat (liste des fichiers du dossier allpokemon) -->
-<script src="liste.js"></script>
 <!-- liste_formes.js est aussi généré par creer_liste.bat (formes alternatives : méga, formes, variantes… et leurs shiny) -->
-<script src="liste_formes.js"></script>
-<script src="types.js"></script>   <!-- types de chaque pokémon / forme : couleur des cases du Pokédex -->
+<!-- types.js : types de chaque pokémon / forme (couleur des cases du Pokédex) -->
+<!-- les listes sont rechargées à chaque visite (?v=…) : le navigateur ne garde pas une vieille version après une mise à jour du site -->
+<script>
+  (function () { var v = Date.now(); ['liste.js', 'liste_formes.js', 'types.js'].forEach(function (f) { document.write('<script src="' + f + '?v=' + v + '"><\/script>'); }); })();
+</script>
 <script>
 // ====== RÉGLAGES ======
 const W = 1080, H = 1920;
