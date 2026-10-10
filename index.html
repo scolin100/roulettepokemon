@@ -1335,8 +1335,21 @@ function etatSucces() {
   const regio = f => liste(LD.filter(e => fileInfo(e).form === f));
   const tout = liste(LD);
   const espece = n => liste(LD.filter(e => fileInfo(e).n === n));                 // un pokémon et toutes ses formes
-  const TRIOS = [[144, 145, 146], [243, 244, 245], [377, 378, 379], [480, 481, 482], [638, 639, 640], [641, 642, 645], [1014, 1015, 1016]];
-  const trios = [TRIOS.filter(t => t.every(n => nums.has(n))).length, TRIOS.length];
+  // trios / quatuors légendaires : un succès chacun
+  const TRIOS = [
+    ['t_oiseaux', '🐦', 'Les oiseaux légendaires', 'Artikodin, Électhor et Sulfura', [144, 145, 146]],
+    ['t_chiens', '🐕', 'Les bêtes légendaires', 'Raikou, Entei et Suicune', [243, 244, 245]],
+    ['t_regi', '🗿', 'Les golems légendaires', 'Regirock, Regice et Registeel', [377, 378, 379]],
+    ['t_meteo', '🌦️', 'Le trio météo', 'Kyogre, Groudon et Rayquaza', [382, 383, 384]],
+    ['t_lacs', '💎', 'Le trio des lacs', 'Créhelf, Créfollet et Créfadet', [480, 481, 482]],
+    ['t_creation', '🌌', 'Le trio de la création', 'Dialga, Palkia et Giratina', [483, 484, 487]],
+    ['t_epees', '⚔️', 'Les épées de la justice', 'Cobaltium, Terrakium, Viridium et Keldeo', [638, 639, 640, 647]],
+    ['t_tao', '☯️', 'Le trio du Tao', 'Reshiram, Zekrom et Kyurem', [643, 644, 646]],
+    ['t_forces', '🌪️', 'Les Forces de la nature', 'Boréas, Fulguris, Démétéros et Amovénus', [641, 642, 645, 905]],
+    ['t_tokos', '🏝️', "Les gardiens d'Alola", 'Tokorico, Tokopiyon, Tokotoro et Tokopisco', [785, 786, 787, 788]],
+    ['t_fleau', '🏺', 'Les trésors du fléau', 'Chongjian, Baojian, Dinglu et Yuyu', [1001, 1002, 1003, 1004]],
+    ['t_loyal', '🍡', 'Le trio loyal', 'Félicanis, Fortivoir et Pondralugon', [1014, 1015, 1016]],
+  ].map(([id, ico, nom, desc, l]) => [id, ico, nom, desc, ...parmi(l)]);
   const ULTRA = [793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806];
   const PARADOXES = [984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 1005, 1006, 1007, 1008, 1009, 1010, 1020, 1021, 1022, 1023];
   const FOSSILES = [138, 139, 140, 141, 142, 345, 346, 347, 348, 408, 409, 410, 411, 564, 565, 566, 567, 696, 697, 698, 699, 880, 881, 882, 883];
@@ -1362,7 +1375,7 @@ function etatSucces() {
     ['rhisui', '🏯', 'Formes de Hisui', 'Obtenir toutes les formes régionales de Hisui', ...regio('hisui')],
     ['rpaldea', '🐂', 'Formes de Paldea', 'Obtenir toutes les formes régionales de Paldea', ...regio('paldea')],
     ...parType,
-    ['trios', '🔱', 'Les trios légendaires', 'Oiseaux de Kanto, chiens de Johto, Regi, trio des lacs, épées de la justice, Forces de la nature, trio loyal', ...trios],
+    ...TRIOS,
     ['ultra', '🌀', 'Les Ultra-Chimères', 'Obtenir les 11 Ultra-Chimères', ...parmi(ULTRA)],
     ['paradox', '⏳', 'Les Paradoxes', 'Obtenir tous les Pokémon Paradoxes, anciens et futurs', ...parmi(PARADOXES)],
     ['fossiles', '🦴', 'Paléontologue', 'Obtenir tous les Pokémon fossiles', ...parmi(FOSSILES)],
