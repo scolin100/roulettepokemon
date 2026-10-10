@@ -75,6 +75,17 @@
   #stage.done .card.win.mega.shiny { border-color:#ffd84a; }
   .megafx { position:absolute; pointer-events:none; }
   .megawrap { inset:0; }
+  /* gigamax : énergie rouge / rose (nuages Dynamax) au lieu de l'arc-en-ciel */
+  @keyframes gigaGlow {
+    0%, 100% { box-shadow:0 0 70px 16px rgba(255,40,90,.95), 0 0 170px 50px rgba(255,60,160,.55); }
+    50%      { box-shadow:0 0 90px 22px rgba(255,90,60,.95), 0 0 200px 60px rgba(200,40,255,.5); }
+  }
+  #stage.done .card.win.mega.giga { animation:gigaGlow 1.6s ease-in-out infinite; border-color:#ff8aa8; }
+  #stage.done .card.win.mega.giga .label { color:#ffd0dc; text-shadow:0 0 18px #ff2a6a, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000; }
+  .megawrap.giga .megaring { background:conic-gradient(from 0deg, #ff1e56, #ff5ab4, #b02cff, #ff1e56, #ff7a3c, #ff1e56); filter:blur(4px) drop-shadow(0 0 40px rgba(255,40,100,.95)); }
+  .megawrap.giga .megarays { background:repeating-conic-gradient(rgba(255,60,120,.28) 0deg 6deg, transparent 6deg 14deg); }
+  .megaflash.giga { background:radial-gradient(circle at 50% 50%, #fff 0%, rgba(255,200,215,.95) 30%, rgba(255,40,100,.65) 60%, rgba(255,40,100,0) 85%); }
+  .megabanner.giga { -webkit-text-stroke:6px #4a0418; text-shadow:0 0 30px #ff2a6a, 0 0 70px #ff5ab4, 0 0 120px #b02cff; font-size:120px; letter-spacing:6px; }
   /* roues ×3 / ×6 : l'anneau s'estompe doucement avant le bord de la roue au lieu d'être coupé net */
   html.roue .megawrap { overflow:hidden; -webkit-mask:linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%); mask:linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%); }
   html.roue .megaring { width:1240px; height:1240px; margin:-620px 0 0 -620px; }
@@ -458,7 +469,7 @@
 <div id="dex" class="modal hidden">
   <div class="box wide">
     <div class="mhead"><strong id="dexTitre">Pokédex</strong><button id="dexClose">✕</button></div>
-    <div class="htabs"><button id="dexTabNorm" class="on">📖 Pokédex</button><button id="dexTabMega">💠 Méga Dex</button></div>
+    <div class="htabs"><button id="dexTabNorm" class="on">📖 Pokédex</button><button id="dexTabMega">💠 Méga Dex</button><button id="dexTabGiga">🔴 Giga Dex</button></div>
     <div class="dexbar">
       <label class="chk" style="border:0;padding:0"><input type="checkbox" id="dexShiny"><span>✨ Afficher uniquement les shiny obtenus</span></label>
       <input type="checkbox" id="dexMega" hidden>
@@ -520,7 +531,8 @@ const ALT_FOLDER = "allformealternative";             // formes alternatives : �
 const ALT_SHINY_FOLDER = "allformealternativeshiny";  // leurs shiny : « 0006 - dracaufeu méga x shiny.gif »
 // méga-évolution au résultat : 10 % par défaut (?mega=N pour N %, ?mega=0 pour désactiver)
 const MEGA_CHANCE = (q => q.has('mega') ? Math.max(0, parseFloat(q.get('mega')) || 0) / 100 : 0.10)(new URLSearchParams(location.search));
-const MEGA_NOM = / ((mâle |femelle )?méga( [xyz])?|primo)$/i;   // « dracaufeu méga x », « mistigrix femelle méga », « kyogre primo »… (Amphinobi Sacha = forme normale)
+const MEGA_NOM = / ((mâle |femelle )?méga( [xyz])?|primo|gigamax)$/i;   // + Gigamax (même transformation au résultat)
+const GIGA = e => / gigamax$/i.test(e.name);   // « dracaufeu méga x », « mistigrix femelle méga », « kyogre primo »… (Amphinobi Sacha = forme normale)
 const MEGA_LIST = [], MEGAS_OF = {};   // toutes les méga · méga de chaque pokémon (par nom de fichier)
 const FORM_LIST = [], FORMS_OF = {};   // toutes les autres formes · formes de chaque pokémon
 
@@ -633,7 +645,7 @@ function initFromManifest() {
     (window.POKEMON_FORMES_LIST || []).filter(n => IMG_RE.test(n) && !ids.has(n)).forEach(n => {
       const e = { id: n, name: cleanName(n), src: ALT_FOLDER + '/' + encodeURIComponent(n), alt: true };
       if (MEGA_NOM.test(e.name)) {
-        e.parent = e.name.replace(/ (mâle )?(méga( [xyz])?|primo)$/i, '') + (n.match(/\.[^.]+$/) || ['.gif'])[0];   // « mistigrix femelle méga » → Mistigrix femelle
+        e.parent = e.name.replace(/ (mâle )?(méga( [xyz])?|primo|gigamax)$/i, '') + (n.match(/\.[^.]+$/) || ['.gif'])[0];   // « mistigrix femelle méga » → Mistigrix femelle
         MEGA_LIST.push(e); (MEGAS_OF[e.parent] = MEGAS_OF[e.parent] || []).push(e);
       } else FORM_LIST.push(e);
     });
@@ -852,9 +864,13 @@ async function spin(forceId) {
   }
   // méga-évolution : 10 % de chance si le gagnant a une méga autorisée (avec le filtre Champions : seulement les méga de ce règlement)
   {
+    // méga ET gigamax (Florizarre…) : 50 % méga / 50 % gigamax ; Dracaufeu : 25 % méga X, 25 % méga Y, 50 % gigamax.
+    // Filtre Champions (M-A / M-B / M-C) : jamais de gigamax (megaPermise les refuse)
     const w = strip[K], megas = (MEGAS_OF[w.entry.id] || []).filter(megaPermise);
-    if (megas.length && (Math.random() < MEGA_CHANCE || window.__forceMega)) {
-      const me = megas[rnd(megas.length)];
+    if (megas.length && (Math.random() < MEGA_CHANCE || window.__forceMega || window.__forceGiga)) {
+      const gg = megas.filter(GIGA), mm = megas.filter(x => !GIGA(x));
+      const pool = !gg.length ? mm : !mm.length ? gg : (window.__forceGiga || (!window.__forceMega && Math.random() < 0.5)) ? gg : mm;
+      const me = pool[rnd(pool.length)];
       const m = w.shiny ? await loadShiny(me) : await loadEntry(me);   // un shiny reste shiny (sinon pas de méga)
       if (m) { m.entry = me; w.mega = m; }
     }
@@ -932,10 +948,11 @@ async function retournerMega(win) {
   await el.animate([{ transform: base + ' rotateY(0deg)', filter: 'brightness(1)' }, { transform: base + ' rotateY(90deg)', filter: 'brightness(2.2)' }], { duration: 420, easing: 'ease-in', fill: 'forwards' }).finished;
   // flash blanc + anneau d'énergie + bandeau
   const fxStage = $('stage');
-  const fl = document.createElement('div'); fl.className = 'megafx megaflash'; fxStage.appendChild(fl); setTimeout(() => fl.remove(), 1200);
-  const wrap = document.createElement('div'); wrap.className = 'megafx megawrap'; fxStage.insertBefore(wrap, $('cards'));
+  const fl = document.createElement('div'); fl.className = 'megafx megaflash' + (GIGA(m) ? ' giga' : ''); fxStage.appendChild(fl); setTimeout(() => fl.remove(), 1200);
+  const giga = GIGA(m);
+  const wrap = document.createElement('div'); wrap.className = 'megafx megawrap' + (giga ? ' giga' : ''); fxStage.insertBefore(wrap, $('cards'));
   ['megarays', 'megaring'].forEach(c => { const r = document.createElement('div'); r.className = 'megafx ' + c; wrap.appendChild(r); });
-  const bn = document.createElement('div'); bn.className = 'megafx megabanner'; bn.textContent = m.name.match(/ primo$/i) ? 'RÉSURGENCE PRIMAIRE !' : 'MÉGA-ÉVOLUTION !'; fxStage.appendChild(bn);
+  const bn = document.createElement('div'); bn.className = 'megafx megabanner' + (giga ? ' giga' : ''); bn.textContent = giga ? 'GIGAMAX !' : m.name.match(/ primo$/i) ? 'RÉSURGENCE PRIMAIRE !' : 'MÉGA-ÉVOLUTION !'; fxStage.appendChild(bn);
   // face cachée : on met la méga
   win._baseSrc = win.src; win.src = m.src;
   if (win.img) win.img.src = m.src;
@@ -944,7 +961,7 @@ async function retournerMega(win) {
   let t = tiredBy ? tiredBy + ' a tiré ' + m.name.replace(/^\s*\d+\s*-?\s*/, '') : m.name;
   if (m.shiny) t = '✨ ' + t + ' ✨';
   lb.textContent = t; fitLabel(lb);
-  el.classList.add('mega'); el.classList.toggle('shiny', !!m.shiny);
+  el.classList.add('mega'); el.classList.toggle('giga', GIGA(m)); el.classList.toggle('shiny', !!m.shiny);
   await el.animate([{ transform: base + ' rotateY(-90deg)', filter: 'brightness(2.2)' }, { transform: base + ' rotateY(0deg)', filter: 'brightness(1)' }], { duration: 560, easing: 'cubic-bezier(.2,1.4,.4,1)', fill: 'forwards' }).finished;
   el.getAnimations().forEach(a => { if (!(window.CSSAnimation && a instanceof CSSAnimation)) a.cancel(); }); el.style.transform = base;   // garde le halo arc-en-ciel (animation CSS)
   fanfare(); burst(); setTimeout(burst, 350); setTimeout(burst, 800);
@@ -1169,7 +1186,7 @@ const TYPE_COUL = { normal:'#A8A77A', fire:'#EE8130', water:'#6390F0', electric:
 function renderDex() {
   const shiny = $('dexShiny').checked, grid = $('dexGrid'); grid.innerHTML = '';
   const mega = $('dexMega').checked, dex = mega ? megaDex : window.__dexNormal();   // Méga Dex ou Pokédex
-  let L = mega ? MEGA_LIST : listeDex();
+  let L = mega ? MEGA_LIST.filter(e => GIGA(e) === dexGiga) : listeDex();   // Méga Dex : méga / Primo · Giga Dex : Gigamax
   let caught = L.filter(e => dex[e.id] && (dex[e.id].n || dex[e.id].s)).length;
   let sh = L.filter(e => dex[e.id] && dex[e.id].s).length;
   $('dexCount').textContent = caught + ' / ' + L.length + ' obtenus · ✨ ' + sh + ' shiny(s)';
@@ -1182,7 +1199,7 @@ function renderDex() {
   dexPage = Math.min(Math.max(dexPage, 0), pages - 1);
   if (!list.length) {
     const d = document.createElement('div'); d.className = 'empty';
-    d.textContent = !L.length ? (mega ? "Aucune méga disponible" : "Liste non chargée") : "Aucun shiny obtenu pour l'instant";
+    d.textContent = !L.length ? (mega ? (dexGiga ? "Aucun Gigamax disponible" : "Aucune méga disponible") : "Liste non chargée") : "Aucun shiny obtenu pour l'instant";
     grid.appendChild(d);
   }
   list.slice(dexPage * DEX_PER, (dexPage + 1) * DEX_PER).forEach(e => {
@@ -1234,25 +1251,29 @@ function regionDe(e) {
   return r ? r[0] : '';
 }
 // onglets Pokédex / Méga Dex
-function ongletDex(mega) {
-  $('dexMega').checked = mega; dexPage = 0;
-  $('dexTabNorm').classList.toggle('on', !mega); $('dexTabMega').classList.toggle('on', mega);
-  $('dexTitre').textContent = mega ? 'Méga Dex' : 'Pokédex';
+let dexGiga = false;                   // onglet Giga Dex (les Gigamax sont enregistrés avec les méga, mais affichés à part)
+const nomDex = () => !$('dexMega').checked ? 'Pokédex' : dexGiga ? 'Giga Dex' : 'Méga Dex';
+function ongletDex(mega, giga) {
+  $('dexMega').checked = mega; dexGiga = !!(mega && giga); dexPage = 0;
+  $('dexTabNorm').classList.toggle('on', !mega); $('dexTabMega').classList.toggle('on', mega && !dexGiga); $('dexTabGiga').classList.toggle('on', dexGiga);
+  $('dexTitre').textContent = nomDex();
   $('dexRegion').style.display = mega ? 'none' : '';
-  $('dexReset').textContent = mega ? 'Réinitialiser le Méga Dex' : 'Réinitialiser le Pokédex';
+  $('dexReset').textContent = 'Réinitialiser le ' + nomDex();
   renderDex();
 }
 $('dexTabNorm').onclick = () => ongletDex(false);
-$('dexTabMega').onclick = () => ongletDex(true);
+$('dexTabMega').onclick = () => ongletDex(true, false);
+$('dexTabGiga').onclick = () => ongletDex(true, true);
 window.__dexNormal = () => dex;
 $('dexPrev').onclick = () => { dexPage--; renderDex(); };
 $('dexNext').onclick = () => { dexPage++; renderDex(); };
 $('dexReset').onclick = () => {
   setTimeout(verifierVerrous, 0);
   const mega = $('dexMega').checked;
-  if (!confirm(mega ? "Es-tu sûr de vouloir réinitialiser le Méga Dex ?\n\nToutes les méga obtenues, y compris les shinys, seront effacées. Cette action est définitive."
+  if (!confirm(mega ? "Es-tu sûr de vouloir réinitialiser le " + nomDex() + " ?\n\n" + (dexGiga ? "Tous les Gigamax obtenus" : "Toutes les méga obtenues") + ", y compris les shinys, seront effacé" + (dexGiga ? "s" : "es") + ". Cette action est définitive."
                     : "Es-tu sûr de vouloir réinitialiser le Pokédex ?\n\nTous les pokémons obtenus, y compris les shinys, seront effacés. Cette action est définitive.")) return;
-  if (mega) { megaDex = {}; saveMegaDex(); } else { dex = {}; saveDex(); }
+  if (mega) { Object.keys(megaDex).forEach(k => { if (/ gigamax\.[a-z0-9]+$/i.test(k) === dexGiga) delete megaDex[k]; }); saveMegaDex(); }   // n'efface que l'onglet affiché
+  else { dex = {}; saveDex(); }
   dexPage = 0; renderDex();
 };
 // ---- calendrier des shinys boostés ----
@@ -1483,7 +1504,7 @@ function fileInfo(e) {
   const mega = mm ? (mm[1] || '') : null;
   // formes spéciales qu'on ne peut pas choisir dans Pokémon Champions : Pikachu à casquette / cosplay / partenaire,
   // formes météo de Morphéo, Morpeko affamé, Superdofin Super, Amphinobi Sacha, Primo
-  const special = !!e.alt && mega == null && (n === 25 || n === 133 || n === 351 || n === 877 || n === 964 || / (primo|sacha|forme assaut|mode transe|forme banc|forme danse)$/.test(t));
+  const special = !!e.alt && mega == null && (n === 25 || n === 133 || n === 351 || n === 877 || n === 964 || / (primo|sacha|forme assaut|mode transe|forme banc|forme danse|gigamax)$/.test(t));
   return (e._info = { n, form, mega, special });
 }
 function matchGen(e, gens, formGen) {
