@@ -74,6 +74,10 @@
   #stage.done .card.win.mega { animation:megaGlow 2.4s linear infinite; border-color:#e6b8ff; }
   #stage.done .card.win.mega.shiny { border-color:#ffd84a; }
   .megafx { position:absolute; pointer-events:none; }
+  .megawrap { inset:0; }
+  /* roues ×3 / ×6 : l'anneau s'estompe doucement avant le bord de la roue au lieu d'être coupé net */
+  html.roue .megawrap { overflow:hidden; -webkit-mask:linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%); mask:linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%); }
+  html.roue .megaring { width:1240px; height:1240px; margin:-620px 0 0 -620px; }
   .megaring { left:50%; top:50%; width:1500px; height:1500px; margin:-750px 0 0 -750px; border-radius:50%;
     background:conic-gradient(from 0deg, #ff4fd8, #ffb340, #ffe86b, #5ef2a0, #4fc3ff, #9a6bff, #ff4fd8);
     -webkit-mask:radial-gradient(circle, transparent 0 52%, #000 56%, #000 60%, transparent 64%, transparent 66%, rgba(0,0,0,.55) 68%, transparent 71%);
@@ -578,6 +582,7 @@ const _QS = new URLSearchParams(location.search);
 const NB = _QS.has('six') ? 6 : 3;                       // nombre de roues (3 ou 6)
 const TRIPLE = _QS.has('triple') || _QS.has('six');                        // page à 3 roues (panneau + 3 roues dans des cadres)
 const CHILD = _QS.has('roue') && window.parent !== window;  // une des 3 roues (chargée dans la page triple)
+if (CHILD) document.documentElement.classList.add('roue');
 // sélecteur « nombre de tirages » : 1 / 3 / 6 roues
 document.querySelectorAll('#nbSel button').forEach(b => {
   const n = +b.dataset.n; b.classList.toggle('on', n === (TRIPLE ? NB : 1));
@@ -821,7 +826,7 @@ async function showIdle() {
 // ---- tirage ----
 async function spin(forceId) {
   if (TRIPLE) return tripleSpin();
-  if (state === 'spinning' || state === 'loading' || !all.length) return;
+  if (state === 'spinning' || state === 'loading' || state === 'anim' || !all.length) return;   // 'anim' : animation du résultat (méga…) pas finie
   initAudio();
   tiredBy = pendingUser; pendingUser = null;
   state = 'loading'; spinBtn.disabled = true;
@@ -907,9 +912,10 @@ function finish() {
     win.el.style.transform = 'translate(-50%,-50%) translateY(0px) scale(1)';
     win.el.style.opacity = 1;
     stage.classList.add('done');
-    state = 'done'; fanfare();
+    state = 'anim'; fanfare();                       // pas de nouveau tirage tant que l'animation du résultat n'est pas finie
     burst(); if (win.shiny) { setTimeout(burst, 350); setTimeout(burst, 800); }
-    if (win.mega) retournerMega(win).then(annoncer); else annoncer();
+    const fin = () => { state = 'done'; annoncer(); };
+    if (win.mega) retournerMega(win).then(() => setTimeout(fin, 1000)); else setTimeout(fin, 1000);
   })(s);
 }
 // ---- méga-évolution au résultat : la carte se retourne et révèle la méga ----
@@ -927,7 +933,8 @@ async function retournerMega(win) {
   // flash blanc + anneau d'énergie + bandeau
   const fxStage = $('stage');
   const fl = document.createElement('div'); fl.className = 'megafx megaflash'; fxStage.appendChild(fl); setTimeout(() => fl.remove(), 1200);
-  ['megarays', 'megaring'].forEach(c => { const r = document.createElement('div'); r.className = 'megafx ' + c; fxStage.insertBefore(r, $('cards')); });
+  const wrap = document.createElement('div'); wrap.className = 'megafx megawrap'; fxStage.insertBefore(wrap, $('cards'));
+  ['megarays', 'megaring'].forEach(c => { const r = document.createElement('div'); r.className = 'megafx ' + c; wrap.appendChild(r); });
   const bn = document.createElement('div'); bn.className = 'megafx megabanner'; bn.textContent = m.name.match(/ primo$/i) ? 'RÉSURGENCE PRIMAIRE !' : 'MÉGA-ÉVOLUTION !'; fxStage.appendChild(bn);
   // face cachée : on met la méga
   win._baseSrc = win.src; win.src = m.src;
@@ -1003,7 +1010,7 @@ function refreshAfterMem() {
   const hidden = fullList.length - all.length;
   info.textContent = all.length + " pokémons disponibles" + (hidden ? " (" + hidden + " retirés)" : "") +
     " — " + Math.min(LOAD_COUNT, all.length) + " tirées au hasard à chaque lancement" + triLabel();
-  spinBtn.disabled = all.length === 0 || state === 'spinning' || state === 'loading';
+  spinBtn.disabled = all.length === 0 || state === 'spinning' || state === 'loading' || state === 'anim';
   if (all.length && !strip.length && state === 'idle') showIdle();
 }
 function toggleMem(id) {
