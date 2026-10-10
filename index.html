@@ -153,6 +153,49 @@
   .row button { padding:5px 10px; font-size:13px; flex:none; }
   .box.wide { width:min(1180px, 96vw); height:auto; max-height:94vh; }
   .dexbar { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; font-size:14px; }
+  #dexSearch, #dexType { padding:6px 10px; border-radius:8px; border:1px solid #2a3042; background:#1a1f2b; color:inherit; font:inherit; }
+  #dexSearch { width:190px; } #dexType, #succFiltre { cursor:pointer; }
+  #succFiltre { padding:6px 10px; border-radius:8px; border:1px solid #2a3042; background:#1a1f2b; color:inherit; font:inherit; }
+  .dcard.got { cursor:pointer; transition:transform .12s; } .dcard.got:hover { transform:translateY(-2px) scale(1.03); }
+  /* fiche */
+  #fiche { z-index:60; }
+  .box.fiche { width:min(620px, 94vw); height:auto; max-height:92vh; overflow:auto; }
+  .fimgs { display:flex; gap:12px; justify-content:center; }
+  .fimg { flex:1; max-width:280px; aspect-ratio:1; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:10px; font-size:13px; font-weight:700; text-shadow:0 1px 2px #000; }
+  .fimg img { max-width:85%; max-height:80%; object-fit:contain; filter:drop-shadow(0 3px 4px rgba(0,0,0,.5)); }
+  .fimg.sh { box-shadow:0 0 0 3px #ffd84a inset; }
+  .ftypes { display:flex; gap:8px; justify-content:center; margin:12px 0 6px; flex-wrap:wrap; }
+  .ftype { padding:5px 14px; border-radius:999px; font-weight:800; font-size:14px; color:#fff; text-shadow:0 1px 2px #000; }
+  .finfo { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:15px; margin-top:8px; }
+  .finfo b { opacity:.7; font-weight:600; }
+  .fbadge { display:inline-block; padding:3px 10px; border-radius:999px; background:linear-gradient(90deg,#b8860b,#ffd84a); color:#2a1a00; font-weight:800; font-size:13px; }
+  /* succès */
+  #dexGrid.succes { grid-template-columns:repeat(4, minmax(0, 1fr)); grid-template-rows:repeat(4, minmax(0, 1fr)); }
+  .scard.vide { visibility:hidden; }
+  .scard { background:#1a1f2c; border:1px solid #2a3042; border-radius:10px; padding:12px; display:flex; gap:12px; align-items:center; min-width:0; }
+  .scard .sico { font-size:34px; flex:none; filter:grayscale(1) opacity(.35); }
+  .scard .stxt { min-width:0; flex:1; } .scard .snom { font-weight:800; font-size:15px; } .scard .sdesc { font-size:12.5px; opacity:.75; }
+  .scard .sbar { height:6px; border-radius:3px; background:#2a3042; margin-top:6px; overflow:hidden; } .scard .sbar i { display:block; height:100%; background:#6a7390; }
+  .scard .sdate { font-size:12px; color:#ffd84a; margin-top:4px; font-weight:700; }
+  .scard.ok { border-color:#c9a227; background:linear-gradient(135deg, #2a2412, #1a1f2c 70%); }
+  .scard.ok .sico { filter:none; }
+  /* bulle « Succès débloqué ! » */
+  #toasts { position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:200; display:flex; flex-direction:column; gap:10px; pointer-events:none; align-items:center; }
+  .toast { display:flex; gap:14px; align-items:center; padding:12px 22px 12px 14px; border-radius:14px; background:linear-gradient(135deg,#3a2c08,#14110a); border:2px solid #ffd84a;
+    box-shadow:0 0 30px rgba(255,216,74,.6); color:#fff; font:700 16px system-ui, sans-serif; white-space:nowrap; animation:toastIn .6s cubic-bezier(.2,1.5,.4,1), toastOut .5s ease-in 5.5s forwards; }
+  .toast .tico { font-size:38px; } .toast small { display:block; color:#ffd84a; font-size:12px; letter-spacing:1px; text-transform:uppercase; }
+  @keyframes toastIn { from { transform:translateY(-80px) scale(.6); opacity:0; } to { transform:none; opacity:1; } }
+  @keyframes toastOut { to { transform:translateY(-40px); opacity:0; } }
+  @media (max-width:1000px) { #dexGrid.succes { grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-rows:none; } }
+  @media (max-width:640px) { #dexGrid.succes { grid-template-columns:1fr; grid-template-rows:none; } #dexSearch { width:100%; } .fimgs { flex-direction:column; align-items:center; } .fimg { width:70%; } }
+  /* légendaire / fabuleux : halo doré */
+  @keyframes legGlow { 0%, 100% { box-shadow:0 0 60px 14px rgba(255,210,70,.95), 0 0 160px 50px rgba(255,170,30,.5); } 50% { box-shadow:0 0 90px 24px rgba(255,240,150,1), 0 0 200px 70px rgba(255,190,60,.6); } }
+  #stage.done .card.win.legend:not(.mega) { animation:legGlow 1.8s ease-in-out infinite; border-color:#ffe08a; }
+  #stage.done .card.win.legend:not(.mega) .label { color:#fff1b8; text-shadow:0 0 18px #ffb800, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000; }
+  .megawrap.legend .megaring { background:conic-gradient(from 0deg, #fff3b0, #ffd84a, #ff9f1a, #fff3b0, #ffe680, #ffb300, #fff3b0); filter:blur(3px) drop-shadow(0 0 40px rgba(255,200,60,.95)); }
+  .megawrap.legend .megarays { background:repeating-conic-gradient(rgba(255,225,120,.32) 0deg 4deg, transparent 4deg 12deg); }
+  .megaflash.legend { background:radial-gradient(circle at 50% 50%, #fff 0%, rgba(255,245,200,.95) 30%, rgba(255,200,60,.6) 60%, rgba(255,200,60,0) 85%); }
+  .megabanner.legend { -webkit-text-stroke:6px #4a3000; text-shadow:0 0 30px #ffd84a, 0 0 70px #ffb300, 0 0 120px #fff3b0; color:#fffbe8; }
   #dexRegion { padding:6px 10px; border-radius:8px; border:1px solid #2a3042; background:#1a1f2b; color:inherit; font:inherit; cursor:pointer; }
   #dexGrid { flex:none; overflow:auto; display:grid; grid-template-columns:repeat(10, 1fr); overflow-y:auto; gap:6px; align-content:start; }
   .dcard { background:#1a1f2c; border:1px solid #2a3042; border-radius:8px; padding:8px 4px; text-align:center; font-size:14px; min-width:0; display:flex; flex-direction:column; align-items:center; gap:3px; }
@@ -469,7 +512,7 @@
 <div id="dex" class="modal hidden">
   <div class="box wide">
     <div class="mhead"><strong id="dexTitre">Pokédex</strong><button id="dexClose">✕</button></div>
-    <div class="htabs"><button id="dexTabNorm" class="on">📖 Pokédex</button><button id="dexTabMega">💠 Méga Dex</button><button id="dexTabGiga">🔴 Giga Dex</button></div>
+    <div class="htabs"><button id="dexTabNorm" class="on">📖 Pokédex</button><button id="dexTabMega">💠 Méga Dex</button><button id="dexTabGiga">🔴 Giga Dex</button><button id="dexTabSucces">🏆 Succès</button></div>
     <div class="dexbar">
       <label class="chk" style="border:0;padding:0"><input type="checkbox" id="dexShiny"><span>✨ Afficher uniquement les shiny obtenus</span></label>
       <input type="checkbox" id="dexMega" hidden>
@@ -479,15 +522,26 @@
         <option value="kalos">Kalos</option><option value="alola">Alola</option><option value="galar">Galar</option>
         <option value="hisui">Hisui</option><option value="paldea">Paldea</option>
       </select>
+      <input type="search" id="dexSearch" placeholder="🔎 Nom ou numéro…" autocomplete="off">
+      <select id="dexType" title="Type"><option value="">🎨 Tous les types</option></select>
+      <select id="succFiltre" title="Afficher" style="display:none"><option value="">🏆 Tous les succès</option><option value="ok">✔ Complétés</option><option value="non">✘ Pas encore complétés</option></select>
       <span id="dexCount"></span>
     </div>
     <div id="dexGrid"></div>
     <div class="mfoot">
       <span style="display:flex;gap:8px;align-items:center"><button id="dexPrev">◀</button><span id="dexPage"></span><button id="dexNext">▶</button></span>
-      <button id="dexReset">Réinitialiser le Pokédex</button>
+      <span style="display:flex;gap:8px;flex-wrap:wrap"><button id="dexExport" title="Télécharge un fichier avec toute ta progression">💾 Sauvegarder</button><button id="dexImport" title="Recharge une sauvegarde (remplace la progression actuelle)">📂 Restaurer</button><input type="file" id="dexImportFile" accept=".json,application/json" hidden><button id="dexReset">Réinitialiser le Pokédex</button></span>
     </div>
   </div>
 </div>
+<!-- fiche d'un pokémon (clic sur une case du Pokédex) -->
+<div id="fiche" class="modal hidden">
+  <div class="box fiche">
+    <div class="mhead"><strong id="ficheTitre"></strong><button id="ficheClose">✕</button></div>
+    <div id="ficheBody"></div>
+  </div>
+</div>
+<div id="toasts"></div>
 
 <div id="cal" class="modal hidden">
   <div class="box" style="width:min(760px,96vw)">
@@ -668,6 +722,7 @@ $('folder').onchange = e => {
 };
 function ready() {
   fullList = all.slice();
+  setTimeout(() => verifierSucces(true), 0);   // succès déjà mérités : enregistrés sans bulle
   const before = all.length;
   all = all.filter(visible);      // exclut les images retirées (mémoire) et celles hors tri
   const hidden = before - all.length;
@@ -928,11 +983,22 @@ function finish() {
     win.el.style.transform = 'translate(-50%,-50%) translateY(0px) scale(1)';
     win.el.style.opacity = 1;
     stage.classList.add('done');
+    const leg = estLegendaire(win.base || win.entry);   // légendaire / fabuleux : halo doré + bandeau
+    if (leg) { win.el.classList.add('legend'); effetLegende(win); }
     state = 'anim'; fanfare();                       // pas de nouveau tirage tant que l'animation du résultat n'est pas finie
     burst(); if (win.shiny) { setTimeout(burst, 350); setTimeout(burst, 800); }
     const fin = () => { state = 'done'; annoncer(); };
-    if (win.mega) retournerMega(win).then(() => setTimeout(fin, 1000)); else setTimeout(fin, 1000);
+    if (win.mega) retournerMega(win).then(() => setTimeout(fin, 1000)); else setTimeout(fin, leg ? 2200 : 1000);
   })(s);
+}
+// ---- légendaire / fabuleux : flash doré, anneau et rayons dorés, bandeau ----
+function effetLegende(win) {
+  const fxStage = $('stage'), n = fileInfo(win.base || win.entry).n;
+  const fl = document.createElement('div'); fl.className = 'megafx megaflash legend'; fxStage.appendChild(fl); setTimeout(() => fl.remove(), 1200);
+  const wrap = document.createElement('div'); wrap.className = 'megafx megawrap legend'; fxStage.insertBefore(wrap, $('cards'));
+  ['megarays', 'megaring'].forEach(c => { const r = document.createElement('div'); r.className = 'megafx ' + c; wrap.appendChild(r); });
+  const bn = document.createElement('div'); bn.className = 'megafx megabanner legend'; bn.textContent = MYTHIQUES.has(n) ? 'FABULEUX !' : 'LÉGENDAIRE !'; fxStage.appendChild(bn);
+  setTimeout(burst, 300); setTimeout(burst, 700);
 }
 // ---- méga-évolution au résultat : la carte se retourne et révèle la méga ----
 const attendre = ms => new Promise(r => setTimeout(r, ms));
@@ -948,6 +1014,7 @@ async function retournerMega(win) {
   await el.animate([{ transform: base + ' rotateY(0deg)', filter: 'brightness(1)' }, { transform: base + ' rotateY(90deg)', filter: 'brightness(2.2)' }], { duration: 420, easing: 'ease-in', fill: 'forwards' }).finished;
   // flash blanc + anneau d'énergie + bandeau
   const fxStage = $('stage');
+  document.querySelectorAll('.megafx').forEach(x => x.remove());   // remplace l'effet « légendaire » s'il y en avait un
   const fl = document.createElement('div'); fl.className = 'megafx megaflash' + (GIGA(m) ? ' giga' : ''); fxStage.appendChild(fl); setTimeout(() => fl.remove(), 1200);
   const giga = GIGA(m);
   const wrap = document.createElement('div'); wrap.className = 'megafx megawrap' + (giga ? ' giga' : ''); fxStage.insertBefore(wrap, $('cards'));
@@ -1165,16 +1232,21 @@ try { const d = JSON.parse(localStorage.getItem(MDEX_KEY) || '{}'); if (d && typ
 function saveMegaDex() { try { localStorage.setItem(MDEX_KEY, JSON.stringify(megaDex)); } catch (e) {} }
 function recordMegaDex(id, shiny, src) {
   if (!id) return;
-  const d = megaDex[id] || (megaDex[id] = { n: 0, s: 0 });
-  if (shiny) { d.s++; if (src) d.f = src; } else d.n++;
-  saveMegaDex();
+  const d = megaDex[id] || (megaDex[id] = { n: 0, s: 0, t: Date.now() });   // t : date de la 1re capture
+  if (shiny) { d.s++; if (src) d.f = src; if (!d.ts) d.ts = Date.now(); } else d.n++;
+  saveMegaDex(); verifierSucces();
   if (!$('dex').classList.contains('hidden')) renderDex();
 }
 function recordDex(id, shiny, src) {
   if (!id) return;
-  const d = dex[id] || (dex[id] = { n: 0, s: 0 });
-  if (shiny) { d.s++; if (src) d.f = src; } else d.n++;
-  saveDex();
+  const d = dex[id] || (dex[id] = { n: 0, s: 0, t: Date.now() });   // t : date de la 1re capture, ts : 1er shiny
+  if (shiny) { d.s++; if (src) d.f = src; if (!d.ts) d.ts = Date.now(); } else d.n++;
+  try {                                            // série de tirages sans shiny (succès « Malchanceux »)
+    const st = JSON.parse(localStorage.getItem('roulette_stats') || '{}') || {};
+    st.serie = shiny ? 0 : (st.serie || 0) + 1; st.max = Math.max(st.max || 0, st.serie);
+    localStorage.setItem('roulette_stats', JSON.stringify(st));
+  } catch (e) {}
+  saveDex(); verifierSucces();
   verifierVerrous();                  // Mew, Celebi, Arceus… peuvent se débloquer
   if (!$('dex').classList.contains('hidden')) renderDex();
 }
@@ -1183,7 +1255,189 @@ const dexPretty = n => n.replace(/^\s*\d+\s*-?\s*/, '').replace(/(^|[\s'-])([a-z
 function dexImg(e) { if (e.file) { const u = URL.createObjectURL(e.file); objectUrls.push(u); return u; } return e.src; }
 const TYPE_COUL = { normal:'#A8A77A', fire:'#EE8130', water:'#6390F0', electric:'#F7D02C', grass:'#7AC74C', ice:'#96D9D6', fighting:'#C22E28', poison:'#A33EA1',
   ground:'#E2BF65', flying:'#A98FF3', psychic:'#F95587', bug:'#A6B91A', rock:'#B6A136', ghost:'#735797', dragon:'#6F35FC', dark:'#705746', steel:'#B7B7CE', fairy:'#D685AD' };
+const TYPE_FR = { normal:'Normal', fire:'Feu', water:'Eau', electric:'Électrik', grass:'Plante', ice:'Glace', fighting:'Combat', poison:'Poison', ground:'Sol',
+  flying:'Vol', psychic:'Psy', bug:'Insecte', rock:'Roche', ghost:'Spectre', dragon:'Dragon', dark:'Ténèbres', steel:'Acier', fairy:'Fée' };
+Object.keys(TYPE_FR).sort((a, b) => TYPE_FR[a].localeCompare(TYPE_FR[b], 'fr')).forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = TYPE_FR[t]; $('dexType').appendChild(o); });
+const sansAccent = t => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const typesDe = e => { const T = window.POKEMON_TYPES || {}; return T[e.id] || (e.parent && T[e.parent]) || []; };
+const MYTHIQUES = new Set([151, 251, 385, 386, 489, 490, 491, 492, 493, 494, 647, 648, 649, 719, 720, 721, 801, 802, 807, 808, 809, 893, 1025]);
+const estLegendaire = e => { const n = fileInfo(e).n; return n != null && LEGENDAIRES.has(n); };
+// ---- fiche d'un pokémon ----
+function ouvrirFiche(e, d) {
+  const T = typesDe(e), n = (e.name.match(/^\s*(\d+)/) || [])[1] || '?', num = +n;
+  $('ficheTitre').textContent = '#' + n + ' · ' + dexPretty(e.name);
+  const c1 = TYPE_COUL[T[0]] || '#555', c2 = TYPE_COUL[T[1] || T[0]] || c1;
+  const fond = 'linear-gradient(rgba(10,12,20,.25), rgba(10,12,20,.25)), linear-gradient(135deg, ' + c1 + ' 0 50%, ' + c2 + ' 50% 100%)';
+  const date = t => t ? new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'avant le suivi des dates';
+  const reg = regionDe(e), REGN = { kanto: 'Kanto', johto: 'Johto', hoenn: 'Hoenn', sinnoh: 'Sinnoh', unys: 'Unys', kalos: 'Kalos', alola: 'Alola', galar: 'Galar', hisui: 'Hisui', paldea: 'Paldea' };
+  let h = '<div class="fimgs"><div class="fimg" style="background:' + fond + '"><img src="' + dexImg(e) + '" alt=""><span>Normal</span></div>';
+  if (d.s && d.f) h += '<div class="fimg sh" style="background:' + fond + '"><img src="' + d.f + '" alt=""><span>✨ Shiny</span></div>';
+  h += '</div><div class="ftypes">' + T.map(t => '<span class="ftype" style="background:' + TYPE_COUL[t] + '">' + TYPE_FR[t] + '</span>').join('') + '</div>';
+  h += '<div class="finfo"><b>Obtenu</b><span>×' + (d.n + d.s) + (d.s ? ' (dont ✨ ' + d.s + ' shiny)' : '') + '</span>';
+  h += '<b>1re capture</b><span>' + date(d.t) + '</span>';
+  if (d.s) h += '<b>1er shiny</b><span>' + date(d.ts) + '</span>';
+  if (reg && !$('dexMega').checked) h += '<b>Région</b><span>' + (REGN[reg] || reg) + '</span>';
+  if (LEGENDAIRES.has(num)) h += '<b>Rareté</b><span><span class="fbadge">' + (MYTHIQUES.has(num) ? '✦ Fabuleux' : '★ Légendaire') + '</span></span>';
+  h += '</div>';
+  $('ficheBody').innerHTML = h;
+  $('fiche').classList.remove('hidden');
+}
+$('ficheClose').onclick = () => $('fiche').classList.add('hidden');
+$('fiche').addEventListener('mousedown', ev => { if (ev.target === $('fiche')) $('fiche').classList.add('hidden'); });
+// ---- sauvegarde / restauration de toute la progression (Pokédex, Méga / Giga Dex, succès, historique, mémoire, réglages) ----
+const SAUVE_EXCLU = new Set(['roulette_twitch_token']);
+$('dexExport').onclick = () => {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('roulette_') && !SAUVE_EXCLU.has(k)) data[k] = localStorage.getItem(k); }
+  const blob = new Blob([JSON.stringify({ roulette: 1, date: new Date().toISOString(), data }, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'roulette-pokemon-sauvegarde-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+};
+$('dexImport').onclick = () => $('dexImportFile').click();
+$('dexImportFile').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+  let j; try { j = JSON.parse(await f.text()); } catch (e) { alert("Ce fichier n'est pas une sauvegarde valide."); return; }
+  if (!j || !j.roulette || !j.data) { alert("Ce fichier n'est pas une sauvegarde de la roulette."); return; }
+  const quand = j.date ? new Date(j.date).toLocaleString('fr-FR') : '?';
+  if (!confirm('Restaurer la sauvegarde du ' + quand + ' ?\n\nTa progression actuelle (Pokédex, Méga Dex, Giga Dex, succès, historique…) sera remplacée.')) return;
+  Object.keys(localStorage).filter(k => k.startsWith('roulette_') && !SAUVE_EXCLU.has(k)).forEach(k => localStorage.removeItem(k));
+  Object.entries(j.data).forEach(([k, v]) => { if (k.startsWith('roulette_') && typeof v === 'string') localStorage.setItem(k, v); });
+  location.reload();
+};
+// ---- succès ----
+const SUCCES_KEY = 'roulette_succes';
+let succes = {};
+try { succes = JSON.parse(localStorage.getItem(SUCCES_KEY) || '{}') || {}; } catch (e) {}
+function etatSucces() {
+  const D = dex, M = megaDex, ok = d => d && (d.n || d.s);
+  const nums = numerosObtenus(D), shinies = Object.values(D).filter(d => d && d.s).length + Object.values(M).filter(d => d && d.s).length;
+  const isG = k => / gigamax\.[a-z0-9]+$/i.test(k);
+  const megas = Object.keys(M).filter(k => ok(M[k]) && !isG(k)).length, gigas = Object.keys(M).filter(k => ok(M[k]) && isG(k)).length;
+  const nbMega = MEGA_LIST.filter(e => !GIGA(e)).length, nbGiga = MEGA_LIST.filter(GIGA).length;
+  const legExist = new Set(fullList.map(e => fileInfo(e).n).filter(n => LEGENDAIRES.has(n)));
+  const leg = [...nums].filter(n => legExist.has(n)).length, myth = [...nums].filter(n => legExist.has(n) && MYTHIQUES.has(n)).length;
+  const formes = FORM_LIST.filter(f => ok(D[f.id])).length;
+  const natio = new Set(fullList.map(e => fileInfo(e).n).filter(n => n != null)).size;
+  const regionOk = g => { const r = GEN_RANGES[g - 1]; return fullList.some(e => { const n = fileInfo(e).n; return n >= r[0] && n <= r[1]; }) && regionComplete(g); };   // région vide (liste incomplète) : pas de succès
+  const regs = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(regionOk).length;
+  const dracau = ['0006 - dracaufeu méga x.gif', '0006 - dracaufeu méga y.gif', '0006 - dracaufeu gigamax.gif'].filter(k => ok(M[k])).length;
+  const primo = ['0382 - kyogre primo.gif', '0383 - groudon primo.gif'].filter(k => ok(M[k])).length;
+  const R = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unys', 'Kalos', 'Alola', 'Galar', 'Paldea'];
+  const existe = new Set(fullList.map(e => fileInfo(e).n).filter(n => n != null));
+  const avance = g => { const r = GEN_RANGES[g - 1]; let c = 0, m = 0; existe.forEach(n => { if (n >= r[0] && n <= r[1]) { m++; if (nums.has(n)) c++; } }); return [c, m]; };
+  const parmi = l => { const x = l.filter(n => existe.has(n)); return [x.filter(n => nums.has(n)).length, x.length]; };
+  const liste = l => [l.filter(e => ok(D[e.id])).length, l.length];
+  const LD = listeDex();
+  const pika = liste(LD.filter(e => fileInfo(e).n === 25));
+  const STARTERS = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393, 495, 498, 501, 650, 653, 656, 722, 725, 728, 810, 813, 816, 906, 909, 912];
+  const CLONES = [311, 312, 417, 587, 702, 777, 877, 921, 922, 923];   // Posipi, Négapi, Pachirisu, Emolga, Dedenne, Togedemaru, Morpeko, Pohm, Pohmotte, Pohmarmotte
+  const regio = f => liste(LD.filter(e => fileInfo(e).form === f));
+  const tout = liste(LD);
+  const espece = n => liste(LD.filter(e => fileInfo(e).n === n));                 // un pokémon et toutes ses formes
+  const TRIOS = [[144, 145, 146], [243, 244, 245], [377, 378, 379], [480, 481, 482], [638, 639, 640], [641, 642, 645], [1014, 1015, 1016]];
+  const trios = [TRIOS.filter(t => t.every(n => nums.has(n))).length, TRIOS.length];
+  const ULTRA = [793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806];
+  const PARADOXES = [984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 1005, 1006, 1007, 1008, 1009, 1010, 1020, 1021, 1022, 1023];
+  const FOSSILES = [138, 139, 140, 141, 142, 345, 346, 347, 348, 408, 409, 410, 411, 564, 565, 566, 567, 696, 697, 698, 699, 880, 881, 882, 883];
+  const EVOLI = [133, 134, 135, 136, 196, 197, 470, 471, 700];
+  let malchance = 0; try { malchance = (JSON.parse(localStorage.getItem('roulette_stats') || '{}') || {}).max || 0; } catch (e) {}
+  // succès par type : tous les pokémons (et formes régionales) de ce type
+  const ICO_T = { normal:'⚪', fire:'🔥', water:'💧', electric:'⚡', grass:'🌿', ice:'❄️', fighting:'🥊', poison:'☠️', ground:'⛰️', flying:'🪶', psychic:'🔮', bug:'🐛', rock:'🪨', ghost:'👻', dragon:'🐉', dark:'🌑', steel:'⚙️', fairy:'🧚' };
+  const parType = Object.keys(ICO_T).map(t => ['type_' + t, ICO_T[t], 'Maître du type ' + TYPE_FR[t], 'Obtenir tous les Pokémon de type ' + TYPE_FR[t], ...liste(fullList.filter(e => typesDe(e).includes(t)))]);
+  const L = [
+    ['debut', '🎒', 'Premier pas', 'Obtenir un premier Pokémon', nums.size, 1],
+    ['p50', '📗', 'Apprenti dresseur', 'Obtenir 50 Pokémon différents', nums.size, 50],
+    ['p151', '📘', 'Comme au premier jour', 'Obtenir 151 Pokémon différents', nums.size, 151],
+    ['p500', '📙', 'Grand collectionneur', 'Obtenir 500 Pokémon différents', nums.size, 500],
+    ['natio', '👑', 'Pokédex national', 'Obtenir tous les Pokémon (sans les formes)', nums.size, natio],
+    ...R.map((r, i) => ['reg' + (i + 1), '🗺️', 'Maître de ' + r, 'Compléter le Pokédex de ' + r, ...avance(i + 1)]),
+    ['regs', '🌍', 'Tour du monde', 'Compléter les 9 régions', regs, 9],
+    ['total', '🏅', 'Maître Pokémon', 'Obtenir tous les Pokémon et toutes leurs variantes', ...tout],
+    ['starters', '🌱', 'Les starters', 'Obtenir les 27 Pokémon de départ (de Bulbizarre à Coiffeton)', ...parmi(STARTERS)],
+    ['pika', '⚡', 'Collection Pikachu', 'Obtenir Pikachu et toutes ses variantes', ...pika],
+    ['clones', '🐭', 'Les clones de Pikachu', 'Posipi, Négapi, Pachirisu, Emolga, Dedenne, Togedemaru, Morpeko, Pohm, Pohmotte, Pohmarmotte', ...parmi(CLONES)],
+    ['ralola', '🌺', "Formes d'Alola", "Obtenir toutes les formes régionales d'Alola", ...regio('alola')],
+    ['rgalar', '🏰', 'Formes de Galar', 'Obtenir toutes les formes régionales de Galar', ...regio('galar')],
+    ['rhisui', '🏯', 'Formes de Hisui', 'Obtenir toutes les formes régionales de Hisui', ...regio('hisui')],
+    ['rpaldea', '🐂', 'Formes de Paldea', 'Obtenir toutes les formes régionales de Paldea', ...regio('paldea')],
+    ...parType,
+    ['trios', '🔱', 'Les trios légendaires', 'Oiseaux de Kanto, chiens de Johto, Regi, trio des lacs, épées de la justice, Forces de la nature, trio loyal', ...trios],
+    ['ultra', '🌀', 'Les Ultra-Chimères', 'Obtenir les 11 Ultra-Chimères', ...parmi(ULTRA)],
+    ['paradox', '⏳', 'Les Paradoxes', 'Obtenir tous les Pokémon Paradoxes, anciens et futurs', ...parmi(PARADOXES)],
+    ['fossiles', '🦴', 'Paléontologue', 'Obtenir tous les Pokémon fossiles', ...parmi(FOSSILES)],
+    ['evoli', '🦊', 'Les Évolitions', 'Obtenir Évoli et ses 8 évolutions', ...parmi(EVOLI)],
+    ['arceus', '🌈', 'Arc-en-ciel', "Obtenir les 18 types d'Arceus", ...espece(493)],
+    ['silvallie', '💾', 'Toutes les ROM', 'Obtenir les 18 types de Silvallié', ...espece(773)],
+    ['couafarel', '✂️', 'Salon de toilettage', 'Obtenir toutes les coupes de Couafarel', ...espece(676)],
+    ['prismillon', '🦋', 'Tour du monde des ailes', 'Obtenir tous les motifs de Prismillon', ...espece(666)],
+    ['zarbi', '🔤', "L'alphabet Zarbi", 'Obtenir toutes les lettres de Zarbi (avec ! et ?)', ...espece(201)],
+    ['charmilly', '🍰', 'Pâtissier', 'Obtenir tous les Charmilly', ...espece(869)],
+    ['malchance', '🐌', 'Malchanceux', '500 tirages de suite sans aucun shiny', malchance, 500],
+    ['f25', '🎭', 'Fan de formes', 'Obtenir 25 formes alternatives', formes, 25],
+    ['f100', '🎨', 'Styliste', 'Obtenir 100 formes alternatives', formes, 100],
+    ['sh1', '✨', 'Ça brille !', 'Obtenir un premier shiny', shinies, 1],
+    ['sh10', '🌟', 'Chasseur de shiny', 'Obtenir 10 shiny', shinies, 10],
+    ['sh50', '💫', 'Maître des shiny', 'Obtenir 50 shiny', shinies, 50],
+    ['leg1', '⭐', 'Rencontre légendaire', 'Obtenir un premier légendaire ou fabuleux', leg, 1],
+    ['leg10', '🌠', 'Chasseur de légendes', 'Obtenir 10 légendaires ou fabuleux', leg, 10],
+    ['legall', '🏛️', 'Panthéon', 'Obtenir tous les légendaires et fabuleux', leg, legExist.size],
+    ['myth1', '🔮', 'Fabuleux !', 'Obtenir un premier Pokémon fabuleux', myth, 1],
+    ['m1', '💠', 'Méga-évolution !', 'Obtenir une première méga-évolution', megas, 1],
+    ['m10', '🔷', 'Méga-collection', 'Obtenir 10 méga-évolutions', megas, 10],
+    ['mall', '💎', 'Méga Dex complet', 'Obtenir toutes les méga-évolutions', megas, nbMega],
+    ['g1', '🔴', 'Gigamax !', 'Obtenir un premier Gigamax', gigas, 1],
+    ['gall', '🌋', 'Giga Dex complet', 'Obtenir tous les Gigamax', gigas, nbGiga],
+    ['dracau', '🔥', 'Dracaufeu sous toutes ses formes', 'Obtenir les méga-évolutions X et Y de Dracaufeu et son Gigamax', dracau, 3],
+    ['primo', '🌊', 'Retour aux sources', 'Obtenir Primo-Kyogre et Primo-Groudon', primo, 2],
+  ];
+  return L.map(([id, ico, nom, desc, cur, max]) => ({ id, ico, nom, desc, cur: Math.min(cur, max), max, ok: max > 0 && cur >= max }));
+}
+function toastSucces(x) {
+  const t = document.createElement('div'); t.className = 'toast';
+  t.innerHTML = '<span class="tico">' + x.ico + '</span><span><small>🏆 Succès débloqué !</small>' + x.nom + '</span>';
+  $('toasts').appendChild(t); setTimeout(() => t.remove(), 6200);
+}
+let _succesTimer = null;
+function verifierSucces(silencieux) {      // silencieux : au chargement (pas de bulle pour les succès déjà mérités avant)
+  if (CHILD || !fullList.length) return;
+  clearTimeout(_succesTimer);
+  _succesTimer = setTimeout(() => {
+    let nouveau = false, k = 0;
+    etatSucces().forEach(x => {
+      if (x.ok && !succes[x.id]) { succes[x.id] = Date.now(); nouveau = true; if (!silencieux && !OV) setTimeout(() => toastSucces(x), 400 + 700 * k++); }
+    });
+    if (nouveau) { try { localStorage.setItem(SUCCES_KEY, JSON.stringify(succes)); } catch (e) {} }
+    if (dexSucces && !$('dex').classList.contains('hidden')) renderSucces();
+  }, silencieux ? 0 : 300);
+}
+const SUCC_PER = 16;
+let dexGridH = 0;                         // hauteur d'une page du Pokédex (les pages de succès prennent la même)
+function renderSucces() {
+  const grid = $('dexGrid'); grid.innerHTML = ''; grid.classList.add('succes');
+  if (dexGridH && innerWidth > 1000) grid.style.height = dexGridH + 'px';
+  const tous = etatSucces(), f = $('succFiltre').value;
+  $('dexCount').textContent = tous.filter(x => succes[x.id]).length + ' / ' + tous.length + ' succès';
+  const L0 = tous.filter(x => !f || (f === 'ok') === !!succes[x.id]);
+  const pages = Math.max(1, Math.ceil(L0.length / SUCC_PER));
+  dexPage = Math.min(Math.max(dexPage, 0), pages - 1);
+  const L = L0.slice(dexPage * SUCC_PER, (dexPage + 1) * SUCC_PER);
+  if (!L.length) { const d = document.createElement('div'); d.className = 'empty'; d.textContent = f === 'ok' ? 'Aucun succès complété pour l\'instant' : 'Tous les succès sont complétés !'; grid.appendChild(d); }
+  L.forEach(x => {
+    const fait = !!succes[x.id], c = document.createElement('div'); c.className = 'scard' + (fait ? ' ok' : '');
+    c.innerHTML = '<span class="sico">' + x.ico + '</span><span class="stxt"><div class="snom">' + x.nom + '</div><div class="sdesc">' + x.desc + '</div>' +
+      (fait ? '<div class="sdate">✔ ' + new Date(succes[x.id]).toLocaleDateString('fr-FR') + '</div>'
+            : (x.max > 1 ? '<div class="sbar"><i style="width:' + Math.round(100 * x.cur / x.max) + '%"></i></div><div class="sdesc">' + x.cur + ' / ' + x.max + '</div>' : '')) + '</span>';
+    grid.appendChild(c);
+  });
+  for (let k = L.length; k < SUCC_PER && innerWidth > 1000; k++) { const g = document.createElement('div'); g.className = 'scard vide'; grid.appendChild(g); }
+  $('dexPage').textContent = 'Page ' + (dexPage + 1) + ' / ' + pages;
+  $('dexPrev').disabled = dexPage <= 0; $('dexNext').disabled = dexPage >= pages - 1;
+}
+let dexSucces = false;
 function renderDex() {
+  $('dexGrid').classList.remove('succes'); $('dexGrid').style.height = '';
+  if (dexSucces) return renderSucces();
   const shiny = $('dexShiny').checked, grid = $('dexGrid'); grid.innerHTML = '';
   const mega = $('dexMega').checked, dex = mega ? megaDex : window.__dexNormal();   // Méga Dex ou Pokédex
   let L = mega ? MEGA_LIST.filter(e => GIGA(e) === dexGiga) : listeDex();   // Méga Dex : méga / Primo · Giga Dex : Gigamax
@@ -1194,6 +1448,12 @@ function renderDex() {
   const reg = mega ? '' : $('dexRegion').value;   // pas de filtre par région dans le Méga Dex
   if (reg) { L = L.filter(e => regionDe(e) === reg); caught = L.filter(e => dex[e.id] && (dex[e.id].n || dex[e.id].s)).length; sh = L.filter(e => dex[e.id] && dex[e.id].s).length;
     $('dexCount').textContent = caught + ' / ' + L.length + ' obtenus · ✨ ' + sh + ' shiny(s)'; }
+  const q = sansAccent($('dexSearch').value.trim()), ty = $('dexType').value;
+  if (q || ty) {                                     // recherche par nom / numéro et filtre par type
+    L = L.filter(e => (!ty || typesDe(e).includes(ty)) && (!q || (/^\d+$/.test(q) ? +q === fileInfo(e).n : sansAccent(cleanName(e.id)).includes(q))));
+    caught = L.filter(e => dex[e.id] && (dex[e.id].n || dex[e.id].s)).length; sh = L.filter(e => dex[e.id] && dex[e.id].s).length;
+    $('dexCount').textContent = caught + ' / ' + L.length + ' obtenus · ✨ ' + sh + ' shiny(s)';
+  }
   const list = shiny ? L.filter(e => dex[e.id] && dex[e.id].s) : L;
   const pages = Math.max(1, Math.ceil(list.length / DEX_PER));
   dexPage = Math.min(Math.max(dexPage, 0), pages - 1);
@@ -1211,6 +1471,7 @@ function renderDex() {
     box.appendChild(img);
     const nm = document.createElement('div'); nm.className = 'dn'; nm.textContent = got ? dexPretty(e.name) : '???';
     card.appendChild(num); card.appendChild(box); card.appendChild(nm);
+    if (got) { card.classList.add('got'); card.onclick = () => ouvrirFiche(e, d); }   // clic : fiche du pokémon
     if (got) {                                   // fond aux couleurs du ou des types
       const T = window.POKEMON_TYPES || {}, ty = T[e.id] || (e.parent && T[e.parent]);
       if (ty && ty.length) {
@@ -1232,6 +1493,7 @@ function renderDex() {
   $('dexPage').textContent = 'Page ' + (dexPage + 1) + ' / ' + pages;
   $('dexPrev').disabled = dexPage <= 0; $('dexNext').disabled = dexPage >= pages - 1;
   grid.scrollTop = 0;
+  if (grid.offsetHeight > 100) dexGridH = grid.offsetHeight;
 }
 function openDex() { closeSheet(); $('dex').classList.remove('hidden'); renderDex(); }
 function closeDex() { $('dex').classList.add('hidden'); }
@@ -1241,6 +1503,8 @@ $('dex').addEventListener('mousedown', e => { if (e.target === $('dex')) closeDe
 $('dexShiny').onchange = () => { dexPage = 0; renderDex(); };
 $('dexMega').onchange = () => { dexPage = 0; renderDex(); };
 $('dexRegion').onchange = () => { dexPage = 0; renderDex(); };
+$('dexType').onchange = () => { dexPage = 0; renderDex(); };
+$('dexSearch').oninput = () => { dexPage = 0; renderDex(); };
 // région d'un pokémon : sa forme régionale d'abord, sinon son numéro (899–905 = Hisui)
 const REGIONS = [['kanto', 1, 151], ['johto', 152, 251], ['hoenn', 252, 386], ['sinnoh', 387, 493], ['unys', 494, 649], ['kalos', 650, 721],
                  ['alola', 722, 809], ['galar', 810, 898], ['hisui', 899, 905], ['paldea', 906, 1025]];
@@ -1253,17 +1517,25 @@ function regionDe(e) {
 // onglets Pokédex / Méga Dex
 let dexGiga = false;                   // onglet Giga Dex (les Gigamax sont enregistrés avec les méga, mais affichés à part)
 const nomDex = () => !$('dexMega').checked ? 'Pokédex' : dexGiga ? 'Giga Dex' : 'Méga Dex';
-function ongletDex(mega, giga) {
+function ongletDex(mega, giga, succ) {
+  if (!dexSucces && $('dexGrid').offsetHeight > 100) dexGridH = $('dexGrid').offsetHeight;   // hauteur réelle d'une page du Pokédex
+  dexSucces = !!succ; if (succ) mega = false;
   $('dexMega').checked = mega; dexGiga = !!(mega && giga); dexPage = 0;
-  $('dexTabNorm').classList.toggle('on', !mega); $('dexTabMega').classList.toggle('on', mega && !dexGiga); $('dexTabGiga').classList.toggle('on', dexGiga);
-  $('dexTitre').textContent = nomDex();
-  $('dexRegion').style.display = mega ? 'none' : '';
+  $('dexTabNorm').classList.toggle('on', !mega && !succ); $('dexTabMega').classList.toggle('on', mega && !dexGiga); $('dexTabGiga').classList.toggle('on', dexGiga);
+  $('dexTabSucces').classList.toggle('on', !!succ);
+  $('dexTitre').textContent = succ ? 'Succès' : nomDex();
+  $('dexRegion').style.display = mega || succ ? 'none' : '';
+  ['dexSearch', 'dexType', 'dexReset'].forEach(i => $(i).style.display = succ ? 'none' : '');
+  $('succFiltre').style.display = succ ? '' : 'none';
+  $('dexShiny').parentNode.style.display = succ ? 'none' : '';
   $('dexReset').textContent = 'Réinitialiser le ' + nomDex();
   renderDex();
 }
 $('dexTabNorm').onclick = () => ongletDex(false);
 $('dexTabMega').onclick = () => ongletDex(true, false);
 $('dexTabGiga').onclick = () => ongletDex(true, true);
+$('dexTabSucces').onclick = () => ongletDex(false, false, true);
+$('succFiltre').onchange = () => { dexPage = 0; renderDex(); };
 window.__dexNormal = () => dex;
 $('dexPrev').onclick = () => { dexPage--; renderDex(); };
 $('dexNext').onclick = () => { dexPage++; renderDex(); };
