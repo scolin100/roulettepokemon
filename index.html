@@ -126,7 +126,10 @@
 
   /* ---------- panneau de commandes à droite ---------- */
   #panel { width:230px; flex:none; background:#12151d; border-left:1px solid #2a3042; padding:16px 14px;
-           display:flex; flex-direction:column; gap:14px; }
+           display:flex; flex-direction:column; gap:14px;
+           overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:#3a4258 transparent; }   /* fenêtre peu haute : le panneau défile */
+  #panel > * { flex-shrink:0; }
+  #panel::-webkit-scrollbar { width:8px; } #panel::-webkit-scrollbar-thumb { background:#3a4258; border-radius:4px; }
   #panel.hidden { display:none; }
   button, label.btn { background:#1e2432; color:#fff; border:1px solid #3a4258; border-radius:8px; padding:10px 12px;
                       font-size:14px; cursor:pointer; text-align:center; }
@@ -258,6 +261,13 @@
   #nbSel { display:flex; gap:4px; }
   #nbSel button { flex:1; padding:8px 0; }
   #nbSel button.on { background:var(--orange); color:#111; border-color:var(--orange); font-weight:700; }
+  #oeufBtn { display:flex; align-items:center; gap:10px; justify-content:center; }
+  #oeufBtn[hidden] { display:none; }
+  #oeufBtn img { width:30px; height:30px; object-fit:contain; }
+  #oeufBtn.on { border-color:#7fd3ff; background:linear-gradient(135deg, #0c2a3a, #1a1f2c); color:#bfe9ff; box-shadow:0 0 12px rgba(127,211,255,.3); }
+  #cibleSearch { background:#1e2432; color:#fff; border:1px solid #3a4258; border-radius:8px; padding:9px 12px; font-size:15px; }
+  #cibleList .trirow { cursor:pointer; } #cibleList .trirow:hover { background:#232a3b; } #cibleList .trirow.on { box-shadow:0 0 0 2px #7fd3ff inset; }
+  .drow.objet { border-color:#7fd3ff; }
   #charmeBtn { display:flex; align-items:center; gap:10px; justify-content:center; }
   #charmeBtn[hidden] { display:none; }
   #charmeBtn img { width:30px; height:30px; object-fit:contain; }
@@ -311,7 +321,7 @@
   @media (max-width: 820px), (max-height: 520px) {
     body { flex-direction:column; }
     #area { background:var(--blue); }
-    #panel { width:100%; border-left:none; border-top:1px solid #2a3042; flex-direction:row; gap:0;
+    #panel { width:100%; border-left:none; border-top:1px solid #2a3042; flex-direction:row; gap:0; overflow:visible;
              padding:10px 12px calc(10px + env(safe-area-inset-bottom)); }
     #bottomBar { display:flex; gap:10px; width:100%; }
     #spin { flex:1; padding:16px 12px; font-size:21px; border-radius:12px; }
@@ -514,6 +524,7 @@
   <button id="deblBtn">🔓 Pokémons à débloquer</button>
   <div class="btnrow"><button id="calBtn">📅 Shinys boostés</button><button id="yearBtn">🗓️ Calendrier</button></div>
   <button id="charmeBtn" hidden></button>
+  <button id="oeufBtn" hidden></button>
   <button id="faqBtn">❓ FAQ · taux de drop</button>
   <button id="manageMem" style="display:none">🗂 Gérer la mémoire</button>
   <button id="resetMem" style="display:none">↺ Réinitialiser la mémoire</button>
@@ -584,6 +595,15 @@
     <div class="mhead"><strong>🔓 Pokémons à débloquer</strong><button id="deblClose">✕</button></div>
     <div class="dexbar"><span>Les tâches à accomplir pour chaque Pokémon ou forme verrouillé. Ceux déjà débloqués sont en bas de la liste.</span><span id="deblCount"></span></div>
     <div id="deblList"></div>
+  </div>
+</div>
+<div id="cible" class="modal hidden">
+  <div class="box">
+    <div class="mhead"><strong>🥚 Charme Ovale · choisir la cible</strong><button id="cibleClose">✕</button></div>
+    <p style="margin:0;font-size:14px;opacity:.85">Le pokémon choisi a <b>5 %</b> de chance de sortir à chaque tirage. Légendaire ou fabuleux : il sort dans <b>la moitié des tirages légendaires</b> (environ 0,5 %).</p>
+    <button id="cibleAucune">❌ Aucune cible</button>
+    <input type="search" id="cibleSearch" placeholder="🔎 Rechercher un pokémon…" autocomplete="off">
+    <div id="cibleList" class="trilist" style="overflow:auto;flex:1"></div>
   </div>
 </div>
 <div id="faq" class="modal hidden">
@@ -809,7 +829,7 @@ $('folder').onchange = e => {
 };
 function ready() {
   fullList = all.slice();
-  setTimeout(() => { verifierSucces(true); majCharme(); }, 0);   // succès déjà mérités : enregistrés sans bulle
+  setTimeout(() => { verifierSucces(true); majCharme(); majOvale(); }, 0);   // succès déjà mérités : enregistrés sans bulle
   const before = all.length;
   all = all.filter(visible);      // exclut les images retirées (mémoire) et celles hors tri
   const hidden = before - all.length;
@@ -922,6 +942,51 @@ function shinyOdds(entry) {
   }
   return SHINY_ODDS / k;
 }
+// ---- Charme Ovale : obtenu en complétant un Pokédex régional ; une cible choisie a 5 % de chance de sortir ----
+const CIBLE_KEY = 'roulette_cible', CIBLE_CHANCE = 0.05;
+// chance de la cible : 5 % ; légendaire / fabuleux : la moitié des tirages légendaires (≈ 0,5 %)
+function cibleChance(id) {
+  const e = id && all.find(x => x.id === id); if (!e) return 0;
+  if (!estLegendaire(e)) return CIBLE_CHANCE;
+  const W = all.reduce((t, x) => t + poidsTirage(x), 0), wl = all.filter(estLegendaire).reduce((t, x) => t + poidsTirage(x), 0);
+  return W > 0 ? 0.5 * wl / W : 0;
+}
+function ovaleRegions() {                          // [région, obtenus, total] pour chaque région
+  const obt = numerosObtenus(dexStocke()), ex = new Set(fullList.map(e => fileInfo(e).n));
+  return GEN_RANGES.map((r, i) => { let c = 0, m = 0; for (let k = r[0]; k <= r[1]; k++) if (ex.has(k)) { m++; if (obt.has(k)) c++; } return [GEN_NAMES[i], c, m]; });
+}
+function ovaleObtenu() { if (window.__TOUT) return true; return fullList.length > 0 && ovaleRegions().some(([, c, m]) => m > 0 && c >= m); }
+function cibleId() { try { return localStorage.getItem(CIBLE_KEY) || ''; } catch (e) { return ''; } }
+function cibleActive() { const c = cibleId(); return c && ovaleObtenu() && all.some(e => e.id === c) ? c : ''; }
+let _ovaleVu = null;
+function majOvale() {
+  const b = $('oeufBtn'); if (!b) return;
+  const ok = ovaleObtenu(); b.hidden = !ok;
+  if (ok) {
+    const c = cibleId(), e = c && fullList.find(x => x.id === c);
+    b.classList.toggle('on', !!e);
+    b.innerHTML = '<img src="Charme_ovale.png" alt=""><span>Charme Ovale : ' + (e ? 'cible ' + dexPretty(e.name) + (all.includes(e) ? '' : ' (indisponible)') : 'aucune cible') + '</span>';
+    b.title = 'Choisir un pokémon cible : 5 % de chance qu\'il sorte à chaque tirage (légendaire / fabuleux : la moitié des tirages légendaires)';
+  }
+  if (ok && _ovaleVu === false && !OV && !CHILD) toastSucces({ ico: '<img src="Charme_ovale.png" alt="" style="width:44px;height:44px;object-fit:contain">', nom: 'Charme Ovale : choisis un pokémon cible', titre: '🎁 Objet obtenu !' });
+  _ovaleVu = ok;
+}
+function remplirCible() {
+  const t = sansAccent($('cibleSearch').value.trim()), c = cibleId(), lst = $('cibleList'); lst.innerHTML = '';
+  all.filter(e => !t || (/^\d+$/.test(t) ? +t === fileInfo(e).n : sansAccent(cleanName(e.id)).includes(t))).forEach(e => {
+    const r = document.createElement('div'); r.className = 'trirow' + (e.id === c ? ' on' : '');
+    const im = new Image(); im.loading = 'lazy'; im.alt = ''; im.src = e.src || '';
+    const n = document.createElement('span'); n.textContent = '#' + ((e.name.match(/^\s*(\d+)/) || [])[1] || '?') + ' ' + dexPretty(e.name);
+    r.appendChild(im); r.appendChild(n);
+    r.onclick = () => { try { localStorage.setItem(CIBLE_KEY, e.id); } catch (er) {} majOvale(); $('cible').classList.add('hidden'); };
+    lst.appendChild(r);
+  });
+}
+$('oeufBtn').onclick = () => { closeSheet(); $('cible').classList.remove('hidden'); $('cibleSearch').value = ''; remplirCible(); };
+$('cibleSearch').oninput = remplirCible;
+$('cibleAucune').onclick = () => { try { localStorage.removeItem(CIBLE_KEY); } catch (e) {} majOvale(); $('cible').classList.add('hidden'); };
+$('cibleClose').onclick = () => $('cible').classList.add('hidden');
+$('cible').addEventListener('mousedown', ev => { if (ev.target === $('cible')) $('cible').classList.add('hidden'); });
 // ---- Charme Chroma : obtenu en complétant le Pokédex national (tous les numéros) ; peut être activé / désactivé ----
 const CHARME_KEY = 'roulette_charme';
 function charmeObtenu() {
@@ -1002,6 +1067,7 @@ async function showIdle() {
 // ---- tirage ----
 async function spin(forceId) {
   if (TRIPLE) return tripleSpin();
+  if (!forceId && state !== 'spinning' && state !== 'loading' && state !== 'anim') { const c = cibleActive(); if (c && Math.random() < cibleChance(c)) forceId = c; }   // Charme Ovale
   if (state === 'spinning' || state === 'loading' || state === 'anim' || !all.length) return;   // 'anim' : animation du résultat (méga…) pas finie
   initAudio();
   tiredBy = pendingUser; pendingUser = null;
@@ -1356,7 +1422,7 @@ function recordDex(id, shiny, src) {
     localStorage.setItem('roulette_stats', JSON.stringify(st));
   } catch (e) {}
   saveDex(); verifierSucces(); if (shiny) majThemeShiny();
-  majCharme();
+  majCharme(); majOvale();
   verifierVerrous();                  // Mew, Celebi, Arceus… peuvent se débloquer
   if (!$('dex').classList.contains('hidden')) renderDex();
 }
@@ -1700,6 +1766,13 @@ function renderDebl() {
     .sort((a, b) => (a.ok - b.ok) || (fileInfo(a.e).n - fileInfo(b.e).n) || (rang(a.e) - rang(b.e)) || a.e.id.localeCompare(b.e.id));   // le pokémon, puis ses formes, puis ses méga
   const box = $('deblList'); box.innerHTML = '';
   $('deblCount').textContent = L.filter(x => x.ok).length + ' / ' + L.length + ' débloqués';
+  {                                                // Charme Ovale : toujours en premier
+    const R = ovaleRegions(), best = R.filter(x => x[2] > 0).sort((a, b) => b[1] / b[2] - a[1] / a[2])[0] || ['?', 0, 1], ok = ovaleObtenu();
+    const r = document.createElement('div'); r.className = 'drow objet' + (ok ? ' fini' : '');
+    r.innerHTML = '<img src="Charme_ovale.png" alt=""><div class="dnom">🥚 Charme Ovale<small>' + (ok ? '✔ Obtenu — 5 % de chance de tirer ta cible' : 'Objet : 5 % de chance de tirer le pokémon de ton choix') + '</small></div>' +
+      '<div class="dtaches"><div class="dtache' + (ok ? ' ok' : '') + '"><span>' + (ok ? '✔ ' : '') + 'Compléter un Pokédex régional (le plus avancé : ' + best[0] + ')</span><span class="dbar"><i style="width:' + Math.round(100 * Math.min(best[1] / best[2], 1)) + '%"></i></span><b>' + best[1] + ' / ' + best[2] + '</b></div></div>';
+    box.appendChild(r);
+  }
   let sep = false;
   L.forEach(({ e, T, ok }) => {
     if (ok && !sep) { sep = true; const h = document.createElement('div'); h.className = 'dsep'; h.textContent = '✔ Déjà débloqués'; box.appendChild(h); }
@@ -1750,6 +1823,7 @@ function renderFaq() {
   h += '<li>Un pokémon précis (non légendaire) : <b class="t">' + surN(1 / W) + '</b> (' + pct(1 / W) + ')</li>';
   h += '<li>Un légendaire ou fabuleux précis : <b class="t">' + surN(POIDS_LEGENDAIRE / W) + '</b> — environ ' + Math.round(1 / POIDS_LEGENDAIRE) + ' fois plus rare qu\'un pokémon normal</li>';
   h += '<li>N\'importe quel légendaire ou fabuleux : <b class="t">' + pct(wl / W) + '</b> par tirage (' + leg.length + ' disponibles)</li></ul>';
+  if (ovaleObtenu()) { const c = cibleId(), e = c && fullList.find(x => x.id === c); h += '<p>🥚 Charme Ovale : le pokémon cible a <b class="t">5 %</b> de chance de sortir à chaque tirage ; s\'il est légendaire ou fabuleux, il sort dans la moitié des tirages légendaires' + (e ? ' (cible actuelle : ' + dexPretty(e.name) + ' — <b class="t">' + pct(cibleChance(c)) + '</b> par tirage)' : ' (aucune cible choisie)') + '.</p>'; }
   h += '<p>Quand un pokémon est tiré, sa forme est choisie ensuite (voir « Formes, méga-évolutions et Gigamax »).</p></details>';
   h += '<details><summary>✨ Shiny</summary><ul>';
   h += '<li>Taux normal : <b class="t">1 sur ' + (SHINY_ODDS / k) + '</b></li>';
@@ -1800,7 +1874,7 @@ $('faq').addEventListener('mousedown', ev => { if (ev.target === $('faq')) $('fa
 function openDex() { closeSheet(); $('dex').classList.remove('hidden'); renderDex(); }
 function closeDex() { $('dex').classList.add('hidden'); }
 $('dexBtn').onclick = openDex;
-$('charmeBtn').onclick = () => { try { localStorage.setItem(CHARME_KEY, charmeActif() ? '0' : '1'); } catch (e) {} majCharme(); };
+$('charmeBtn').onclick = () => { try { localStorage.setItem(CHARME_KEY, charmeActif() ? '0' : '1'); } catch (e) {} majCharme(); majOvale(); };
 $('dexClose').onclick = closeDex;
 $('dex').addEventListener('mousedown', e => { if (e.target === $('dex')) closeDex(); });
 $('dexShiny').onchange = () => { dexPage = 0; renderDex(); };
@@ -1857,7 +1931,7 @@ $('dexReset').onclick = () => {
   // succès qui ne sont plus mérités après l'effacement : retirés
   etatSucces().forEach(x => { if (succes[x.id] && !x.ok) delete succes[x.id]; });
   try { localStorage.setItem('roulette_succes', JSON.stringify(succes)); } catch (e) {}
-  majThemeShiny(); majCharme();
+  majThemeShiny(); majCharme(); majOvale();
   dexPage = 0; renderDex();
 };
 // ---- calendrier des shinys boostés ----
@@ -2587,6 +2661,8 @@ if (TRIPLE) {
       seenN.add(k); win.push(e.id);
       if (win.length >= NB) break;
     }
+    const cb = cibleActive();                         // Charme Ovale : 5 % par roue (une seule fois par tirage)
+    if (cb && !win.includes(cb)) for (let i = 0; i < win.length; i++) if (Math.random() < cibleChance(cb)) { win[i] = cb; break; }
     rs.forEach((r, i) => r.tirer(win[i]));
   };
   window.tripleWin = (name, id, src, megaId, megaSrc, baseId) => {
