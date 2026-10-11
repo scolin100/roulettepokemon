@@ -651,6 +651,8 @@
 <!-- types.js : types de chaque pokémon / forme (couleur des cases du Pokédex) -->
 <!-- les listes sont rechargées à chaque visite (?v=…) : le navigateur ne garde pas une vieille version après une mise à jour du site -->
 <script>
+  // version overlay (roue Twitch dans OBS) : tous les pokémons à chance égale et tout débloqué (formes / méga / Gigamax : taux normaux)
+  window.__OVL = (function (q) { return q.has('overlay') && q.get('overlay') !== '0' && !q.has('roue'); })(new URLSearchParams(location.search));
   (function () { var v = Date.now(); ['liste.js', 'liste_formes.js', 'types.js'].forEach(function (f) { document.write('<script src="' + f + '?v=' + v + '"><\/script>'); }); })();
 </script>
 <script>
@@ -710,7 +712,7 @@ const BEBES = [172, 173, 174, 175, 236, 238, 239, 240, 298, 360, 406, 433, 438, 
 function dejaObtenu(id) {               // relu à chaque fois (le Pokédex est partagé entre les roues)
   try { const d = JSON.parse(localStorage.getItem('roulette_pokedex') || '{}')[id]; return !!(d && (d.n || d.s)); } catch (e) { return false; }
 }
-const formeDebloquee = f => { const c = DEBLOCAGE[f.id]; return !c ? true : typeof c === 'function' ? c() : !Array.isArray(c) ? c.test() : c.every(dejaObtenu); };
+const formeDebloquee = f => { if (window.__OVL) return true; const c = DEBLOCAGE[f.id]; return !c ? true : typeof c === 'function' ? c() : !Array.isArray(c) ? c.test() : c.every(dejaObtenu); };
 // région complète (1 = Kanto … 7 = Alola) : chaque numéro de la génération obtenu au moins une fois
 function regionComplete(g) {
   const r = GEN_RANGES[g - 1], obt = numerosObtenus(dexStocke()), ex = new Set(fullList.map(e => fileInfo(e).n));
@@ -851,7 +853,7 @@ const LEGENDAIRES = new Set([144,145,146,150,151,243,244,245,249,250,251,377,378
   888,889,890,891,892,893,894,895,896,897,898,905,1001,1002,1003,1004,1007,1008,1014,1015,1016,1017,1024,1025]);
 // poids d'un légendaire : 0.15 = environ 7 fois moins de chances de sortir (?legendaire=N pour changer, ?legendaire=1 = comme les autres)
 const POIDS_LEGENDAIRE = (q => q.has('legendaire') ? Math.max(0, parseFloat(q.get('legendaire')) || 0) : 0.15)(new URLSearchParams(location.search));
-const poidsTirage = e => { const n = fileInfo(e).n; return n != null && LEGENDAIRES.has(n) ? POIDS_LEGENDAIRE : 1; };
+const poidsTirage = e => { if (window.__OVL) return 1; const n = fileInfo(e).n; return n != null && LEGENDAIRES.has(n) ? POIDS_LEGENDAIRE : 1; };
 // tirage de n pokémons différents, pondéré (les légendaires ont moins de chances d'être pris)
 function sample(arr, n) {
   return arr.map(e => [Math.pow(Math.random(), 1 / Math.max(1e-6, poidsTirage(e))), e]).sort((a, b) => b[0] - a[0]).slice(0, n).map(x => x[1]);
@@ -1096,7 +1098,7 @@ async function spin(forceId) {
   {
     // méga ET gigamax (Florizarre…) : 50 % méga / 50 % gigamax ; Dracaufeu : 25 % méga X, 25 % méga Y, 50 % gigamax.
     // Filtre Champions (M-A / M-B / M-C) : jamais de gigamax (megaPermise les refuse)
-    const w = strip[K], megas = (MEGAS_OF[w.entry.id] || []).filter(megaPermise).filter(m => !/ infinimax$/i.test(m.name) || gigaDexFini()).filter(m => !MEGA_DEBLOCAGE[m.id] || MEGA_DEBLOCAGE[m.id].test());   // Infinimax : Giga Dex fini
+    const w = strip[K], megas = (MEGAS_OF[w.entry.id] || []).filter(megaPermise).filter(m => window.__OVL || ((!/ infinimax$/i.test(m.name) || gigaDexFini()) && (!MEGA_DEBLOCAGE[m.id] || MEGA_DEBLOCAGE[m.id].test())));   // Infinimax : Giga Dex fini
     if (megas.length && (Math.random() < MEGA_CHANCE || window.__forceMega || window.__forceGiga)) {
       const gg = megas.filter(GIGA), mm = megas.filter(x => !GIGA(x));
       const pool = !gg.length ? mm : !mm.length ? gg : (window.__forceGiga || (!window.__forceMega && Math.random() < 0.5)) ? gg : mm;
@@ -1136,7 +1138,7 @@ function finish() {
     const annoncer = () => {
     if (tiredBy && window.__twitchSay) {            // même message dans le tchat Twitch (option chat=1)
       const nm = final.name.replace(/^\s*\d+\s*-?\s*/, '').split(' ').map((w, i) => i > 0 && /^(de|du|des|le|la)$/i.test(w) ? w : i > 0 && /^d'/i.test(w) ? "d'" + w.slice(2).replace(/^./, c => c.toUpperCase()) : w.replace(/(^|[-'])([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase())).join(' ');
-      window.__twitchSay(tiredBy + ' a tiré ' + nm);
+      window.__twitchSay(tiredBy + ' a tiré ' + nm + (final.shiny ? ' ✨' : ''));   // ✨ : lu par la scène de défilement
     }
     if (CHILD) { try { window.parent.tripleWin(final.name, win.entry.id, win.shiny ? (win._baseSrc || win.src) : null, win.mega ? win.mega.entry.id : null, win.mega && win.mega.shiny ? win.mega.src : null, (win.base || win.entry).id); } catch (e) {} }   // historique + mémoire gérés par la page parente
     else addHistory(win);
@@ -2278,6 +2280,7 @@ function verrouOuvert(n, d = dexStocke(), obt = numerosObtenus(d)) {
 }
 let _verrous = null;   // état des verrous au dernier calcul (pour recalculer la roue quand l'un s'ouvre)
 function pokemonDebloque(e) {
+  if (window.__OVL) return true;
   const n = fileInfo(e).n;
   if (!VERROUS[n] || fileInfo(e).form) return true;
   if (!_verrous) { const d = dexStocke(), o = numerosObtenus(d); _verrous = {}; for (const k in VERROUS) _verrous[k] = verrouOuvert(+k, d, o); }
